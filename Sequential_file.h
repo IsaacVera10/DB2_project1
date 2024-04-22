@@ -90,7 +90,7 @@ public:
                 //Desempaquetamos el registro
                 char* buffer = new char[var_temps_SF::size_record];
                 file1.read(buffer, var_temps_SF::size_record);
-                var_temps_SF::rec_temp.desempaquetar(buffer);<
+                var_temps_SF::rec_temp.desempaquetar(buffer);
                 delete[] buffer;
 
                 

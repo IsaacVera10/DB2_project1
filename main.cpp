@@ -93,7 +93,7 @@ void test_SequentialFile(){
 }
 
 int main(){
-    // test_SequentialFile();
+    test_SequentialFile();
 
 
     return 0;
