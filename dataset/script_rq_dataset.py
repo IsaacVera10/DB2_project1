@@ -1,7 +1,7 @@
 import csv
 
 # Nombre del archivo de entrada y salida
-archivo_entrada = './dataset/movie_dataset.csv'
+archivo_entrada = 'movie_dataset.csv'
 archivo_salida = 'movie_dataset_modify.csv'
 
 
@@ -59,4 +59,4 @@ def obtain_date():
 
 
 if __name__ == '__main__':
-    obtain_date()
+    modify_file()
