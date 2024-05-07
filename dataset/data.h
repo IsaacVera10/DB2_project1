@@ -18,11 +18,15 @@ struct Record_SFile{
     long ganancia;
     long tiempo;
     char lang[3];
-    size_t punt_nextPosFisica = 0; //8 bits
+    long punt_nextPosLogic = -1; //8 bits
     bool punt_next_is_In_Data = false; // 1bits
 
+    auto key_value(){
+        return id;
+    }
+
     Record_SFile() = default;
-    Record_SFile(long id, char name[71], float punt_promedio, long vote_count, char release_date[11], long ganancia, long tiempo, char lang[3]){
+    Record_SFile(long id, const char* name, float punt_promedio, long vote_count, const char* release_date, long ganancia, long tiempo, const char* lang){
         this->id = id;
         strcpy(this->name, name);
         this->punt_promedio = punt_promedio;
@@ -42,27 +46,27 @@ struct Record_SFile{
              << setw(11) << left << ganancia<< " | "
              << setw(6) << left << tiempo<< " | "
              << setw(3) << left << lang << " | "
-             << setw(8) << left << punt_nextPosFisica << " | "
+             << setw(8) << left << punt_nextPosLogic << " | "
              << setw(8) << left << punt_next_is_In_Data << endl;
     }
 };
 
 
-vector<Record_SFile> generate_struct_records(long count = -1){
+vector<Record_SFile> generate_struct_records(string route_file, long count = -1){
     vector<Record_SFile> records;
+    Record_SFile record;
     try {
         csv::CSVFormat format;
         format.delimiter(',');
         format.quote('"');
         format.header_row(0);
 
-        csv::CSVReader reader("./dataset/movie_dataset.csv", format);
-
+        csv::CSVReader reader("./"+route_file, format);
         for(auto& row : reader){
             if(count>0) count --;
             else if(count == 0) break;
 
-            Record_SFile record;    
+            
             record.id = row["id"].get<long>();
             strcpy(record.name, row["title"].get<string>().c_str());
             record.punt_promedio = row["vote_average"].get<float>();
