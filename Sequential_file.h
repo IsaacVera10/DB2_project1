@@ -131,7 +131,7 @@ public:
             //Buscando el puntero del record anterior al que se insertará
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 //Verificamos si el registro anterior está en data.bin
-            search(to_string(record.key_value()),0); //O(log(n)) -> Busqueda binaria
+            search_setUL(to_string(record.key_value())); //O(log(n)) -> Busqueda binaria
             
             if(var_temps_SF::u_before!=-1){//Si el registro a insertar no es el primero
                 file1.seekp(sizeof(var_temps_SF::n_data)+ sizeof(var_temps_SF::punt_pos) + sizeof(var_temps_SF::punt_is_in_data) + var_temps_SF::u_before*sizeof(Record_SFile), ios::beg);
@@ -270,7 +270,7 @@ public:
 
     }
     
-    Record_SFile search(T key, bool user = 1){//Busqueda binaria
+    Record_SFile search(T key){//Busqueda binaria
         Record_SFile record;
 
         ifstream file("files/" + this->filename, ios::binary | ios::in);
@@ -296,10 +296,36 @@ public:
                 return record;
             }
         }
-        if(user) cout<<"Registro no encontrado"<<endl;
+        throw runtime_error("Registro no encontrado");
+    }
+
+    void search_setUL(T key){//Busqueda binaria
+        Record_SFile record;
+
+        ifstream file("files/" + this->filename, ios::binary | ios::in);
+        if (!file.is_open()) throw runtime_error("No se pudo abrir el archivo " + filename);
+
+        file.seekg(0, ios::beg);
+
+        file.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
+
+        long l=0, u=var_temps_SF::n_data-1, m=0;
+
+        while(l<=u){
+            m = (l+u)/2;
+            file.seekg(sizeof(var_temps_SF::n_data)+ sizeof(var_temps_SF::punt_pos) + sizeof(var_temps_SF::punt_is_in_data) + m*sizeof(Record_SFile), ios::beg);
+            file.read(reinterpret_cast<char*>(&record), sizeof(record));
+            if(record.key_value() < stol(key)){
+                l = m+1;
+            }else if(record.key_value() > stol(key)){
+                u = m-1;
+            }else{
+                cout<<"Registro encontrado"<<endl;
+                return;
+            }
+        }
         var_temps_SF::u_before = u;
         var_temps_SF::l_after = l;
-        
     }
 
     vector<Record_SFile> range_search(T begin_key, T end_key){
