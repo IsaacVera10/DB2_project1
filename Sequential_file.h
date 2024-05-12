@@ -132,29 +132,38 @@ public:
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 //Verificamos si el registro anterior está en data.bin
             search_setUL(to_string(record.key_value())); //O(log(n)) -> Busqueda binaria
-            
+            // if(record.key_value()==11324){
+            //     cout<<"in data: "<<endl;
+            //     cout<<"u_before: "<<var_temps_SF::u_before<<" | u_before_is_in_data: "<<var_temps_SF::u_before_is_in_data<<endl;
+            //     cout<<"Record_insert: ";
+            //     record.showData_line();
+            // }
+
             if(var_temps_SF::u_before!=-1){//Si el registro a insertar no es el primero
-                file1.seekp(sizeof(var_temps_SF::n_data)+ sizeof(var_temps_SF::punt_pos) + sizeof(var_temps_SF::punt_is_in_data) + var_temps_SF::u_before*sizeof(Record_SFile), ios::beg);
+                file1.seekp(get_pos_fisica(var_temps_SF::u_before, true), ios::beg);
                 file1.read(reinterpret_cast<char*>(&var_temps_SF::rec_temp), sizeof(var_temps_SF::rec_temp));
                 var_temps_SF::punt_pos = var_temps_SF::rec_temp.punt_nextPosLogic;
                 var_temps_SF::punt_is_in_data = var_temps_SF::rec_temp.punt_next_is_In_Data;
             }
-
+            // cout<<"punt_pos: "<<var_temps_SF::punt_pos<<" | punt_is_in_data: "<<var_temps_SF::punt_is_in_data<<endl<<endl;
                 //Verificamos si el puntero del record anterior se dirige a un registro en aux.bin
             if(var_temps_SF::punt_is_in_data == false && var_temps_SF::punt_pos!=-1){
-                do{
+                while(record.key_value() > var_temps_SF::rec_temp.key_value() && var_temps_SF::punt_pos!=-1 && var_temps_SF::punt_is_in_data==false){
                     file2.seekg(get_pos_fisica(var_temps_SF::punt_pos, false), ios::beg);
                     file2.read(reinterpret_cast<char*>(&var_temps_SF::rec_temp), sizeof(var_temps_SF::rec_temp));
+
                     var_temps_SF::u_before = var_temps_SF::punt_pos;
                     var_temps_SF::u_before_is_in_data = var_temps_SF::punt_is_in_data;
                     var_temps_SF::punt_pos = var_temps_SF::rec_temp.punt_nextPosLogic;
                     var_temps_SF::punt_is_in_data = var_temps_SF::rec_temp.punt_next_is_In_Data;
-                
-                }while(record.key_value() > var_temps_SF::rec_temp.key_value() && var_temps_SF::punt_pos!=-1);
-
+                }
             }
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+            // cout<<"punt_pos: "<<var_temps_SF::punt_pos<<" | punt_is_in_data: "<<var_temps_SF::punt_is_in_data<<endl;
+            // cout<<"u_before: "<<var_temps_SF::u_before<<" | u_before_is_in_data: "<<var_temps_SF::u_before_is_in_data<<endl;
+            // cout<<"rec_before: ";
+            // var_temps_SF::rec_temp.showData_line();
             //Actualizamos la metadata del record a insertar y escribimos el registro en file2
             file2.seekp(0, ios::end);
             record.punt_nextPosLogic = var_temps_SF::punt_pos;
@@ -191,11 +200,11 @@ public:
             file2.seekp(0, ios::beg);
             file2.write(reinterpret_cast<const char*>(&var_temps_SF::n_aux), sizeof(var_temps_SF::n_aux));
 
-            
             if(int(log2(var_temps_SF::n_data))==var_temps_SF::n_aux){//Si hay 2 registros en aux.bin, se hace el merge
                 reBuild(file1, file2);
             }
         }
+        
         if(file1.is_open()) file1.close();
         if(file2.is_open()) file2.close();
 
@@ -325,16 +334,34 @@ public:
             }
         }
         var_temps_SF::u_before = u;
+        var_temps_SF::u_before_is_in_data = true;
         var_temps_SF::l_after = l;
+        var_temps_SF::punt_is_in_data = true;
+        if(key=="11324"){
+            cout<<"u_before: "<<var_temps_SF::u_before<<" | l_after: "<<var_temps_SF::l_after<<endl;
+        }
     }
 
     vector<Record_SFile> range_search(T begin_key, T end_key){
         vector<Record_SFile> records;
-
         return records;
     }
 
     bool remove_record(T key){
+        fstream file1("files/" + this->filename, ios::binary | ios::in | ios::out);
+        fstream file2("files/aux_sf.bin", ios::binary | ios::in | ios::out);
+        if (!file1.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
+        if (!file2.is_open()) throw runtime_error("No se pudo abrir el archivo metadata.dat");
+
+        file1.seekg(0, ios::beg);
+        file2.seekg(0, ios::beg);
+
+        file1.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
+        file1.read(reinterpret_cast<char*>(&var_temps_SF::punt_pos), sizeof(var_temps_SF::punt_pos));
+
+        file2.read(reinterpret_cast<char*>(&var_temps_SF::n_aux), sizeof(var_temps_SF::n_aux));
+
+        
 
         return true;
     }
@@ -348,6 +375,7 @@ public:
 
         file.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
         cout<<setw(6)<<"n_data: "<<left<<var_temps_SF::n_data;
+
         if(namefile==this->filename || namefile=="temp.bin"){
             if(var_temps_SF::n_data==0 && var_temps_SF::punt_pos==0 && var_temps_SF::punt_is_in_data==false){
                 cout<<endl<<"-------------------------------------------------"<<endl;
@@ -368,14 +396,14 @@ public:
         }
 
         cout<<"-------------------------------------------------"<<endl;
-        // long iter_pos = 0;
+        long iter_pos = 0;
         
         while(!file.eof()){
             file.read(reinterpret_cast<char*>(&var_temps_SF::rec_temp), sizeof(var_temps_SF::rec_temp));
             if(file.eof()) break;
-            // cout<<iter_pos<<": ";
+            cout<<iter_pos<<": ";
             var_temps_SF::rec_temp.showData_line();
-            // iter_pos++;
+            iter_pos++;
         }
 
         file.close();
