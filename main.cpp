@@ -3,9 +3,8 @@
 
 int main(){
 
-    auto vec_data = generate_struct_records("dataset/movie_dataset.csv", 100000);
+    auto vec_data = generate_struct_records("dataset/movie_dataset.csv", 10000);
 
-    // cout<<sizeof(Record_SFile)<<endl;
     // for(auto& v: vec_data){
     //     v.showData_line();
     // }
@@ -16,7 +15,7 @@ int main(){
     for(auto& v: vec_data){
         file.add(v);
     }
-    // file.add(vec_data[20]);
+    // // file.add(vec_data[20]);
 
     file.print_file("data_sf.bin");
     cout<<endl;

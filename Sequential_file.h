@@ -12,8 +12,8 @@ using namespace std;
 //Trabajaremos con posiciones lógicas
 
 namespace var_temps_SF{
-    long n_data = 0, n_aux=0, u_before, l_after;
-    long punt_pos = 0;
+    int64_t n_data = 0, n_aux=0, u_before, l_after;
+    int64_t punt_pos = 0;
     bool punt_is_in_data = false, u_before_is_in_data = true;
     Record_SFile rec_temp, rec_temp_aux;
 }
@@ -22,7 +22,7 @@ class Sequential_File {
 private:
     string filename;
 
-    long get_pos_logical(long pos_fisica, bool is_in_data){
+    int64_t get_pos_logical(int64_t pos_fisica, bool is_in_data){
         if(is_in_data){
             return (pos_fisica - (sizeof(var_temps_SF::n_data)+ sizeof(var_temps_SF::punt_pos) + sizeof(var_temps_SF::punt_is_in_data))) / sizeof(Record_SFile);
         }else{
@@ -30,7 +30,7 @@ private:
         }
     }
 
-    long get_pos_fisica(long pos_logical, bool is_in_data){
+    int64_t get_pos_fisica(int64_t pos_logical, bool is_in_data){
         if(is_in_data){
             return (pos_logical * sizeof(Record_SFile)) + (sizeof(var_temps_SF::n_data)+ sizeof(var_temps_SF::punt_pos) + sizeof(var_temps_SF::punt_is_in_data));
         }else{
@@ -227,10 +227,10 @@ public:
         //Escribimos la metadata cabezera en temp.bin
         file_temp.seekg(0, ios::beg);
 
-        long n_temp = var_temps_SF::n_data + var_temps_SF::n_aux;
+        int64_t n_temp = var_temps_SF::n_data + var_temps_SF::n_aux;
         file_temp.write(reinterpret_cast<const char*>(&n_temp), sizeof(n_temp));
 
-        long punt_temp = 0;
+        int64_t punt_temp = 0;
         file_temp.write(reinterpret_cast<const char*>(&punt_temp), sizeof(punt_temp));
 
         bool punt_is_in_data_temp = true;
@@ -251,7 +251,7 @@ public:
             //Escribimos el registro en temp.bin
             file_temp.seekp(0, ios::end);
             if(var_temps_SF::punt_pos!=-1){
-                var_temps_SF::rec_temp.punt_nextPosLogic = get_pos_logical(long(file_temp.tellp())+long(sizeof(var_temps_SF::rec_temp)), true);
+                var_temps_SF::rec_temp.punt_nextPosLogic = get_pos_logical(int64_t(file_temp.tellp())+int64_t(sizeof(var_temps_SF::rec_temp)), true);
                 var_temps_SF::rec_temp.punt_next_is_In_Data = true;
             }
             file_temp.write(reinterpret_cast<const char*>(&var_temps_SF::rec_temp), sizeof(var_temps_SF::rec_temp));
@@ -289,7 +289,7 @@ public:
 
         file.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
 
-        long l=0, u=var_temps_SF::n_data-1, m=0;
+        int64_t l=0, u=var_temps_SF::n_data-1, m=0;
 
         while(l<=u){
             m = (l+u)/2;
@@ -318,7 +318,7 @@ public:
 
         file.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
 
-        long l=0, u=var_temps_SF::n_data-1, m=0;
+        int64_t l=0, u=var_temps_SF::n_data-1, m=0;
 
         while(l<=u){
             m = (l+u)/2;
@@ -337,9 +337,6 @@ public:
         var_temps_SF::u_before_is_in_data = true;
         var_temps_SF::l_after = l;
         var_temps_SF::punt_is_in_data = true;
-        if(key=="11324"){
-            cout<<"u_before: "<<var_temps_SF::u_before<<" | l_after: "<<var_temps_SF::l_after<<endl;
-        }
     }
 
     vector<Record_SFile> range_search(T begin_key, T end_key){
@@ -396,7 +393,7 @@ public:
         }
 
         cout<<"-------------------------------------------------"<<endl;
-        long iter_pos = 0;
+        int64_t iter_pos = 0;
         
         while(!file.eof()){
             file.read(reinterpret_cast<char*>(&var_temps_SF::rec_temp), sizeof(var_temps_SF::rec_temp));

@@ -10,15 +10,15 @@ using namespace csv;
 using namespace std;
 
 struct Record_SFile{
-    long id;
+    int64_t id;
     char name[71];
     float punt_promedio;
-    long vote_count;
+    int64_t vote_count;
     char release_date[11];
-    long ganancia;
-    long tiempo;
+    int64_t ganancia;
+    int64_t tiempo;
     char lang[3];
-    long punt_nextPosLogic = -1; //8 bits
+    int64_t punt_nextPosLogic = -1; //8 bits
     bool punt_next_is_In_Data = false; // 1bits
 
     auto key_value(){
@@ -26,7 +26,7 @@ struct Record_SFile{
     }
 
     Record_SFile() = default;
-    Record_SFile(long id, const char* name, float punt_promedio, long vote_count, const char* release_date, long ganancia, long tiempo, const char* lang){
+    Record_SFile(int64_t id, const char* name, float punt_promedio, int64_t vote_count, const char* release_date, int64_t ganancia, int64_t tiempo, const char* lang){
         this->id = id;
         strcpy(this->name, name);
         this->punt_promedio = punt_promedio;
@@ -52,7 +52,7 @@ struct Record_SFile{
 };
 
 
-vector<Record_SFile> generate_struct_records(string route_file, long count = -1){
+vector<Record_SFile> generate_struct_records(string route_file, int64_t count = -1){
     vector<Record_SFile> records;
     Record_SFile record;
     try {
@@ -67,13 +67,13 @@ vector<Record_SFile> generate_struct_records(string route_file, long count = -1)
             else if(count == 0) break;
 
             
-            record.id = row["id"].get<long>();
+            record.id = row["id"].get<int64_t>();
             strcpy(record.name, row["title"].get<string>().c_str());
             record.punt_promedio = row["vote_average"].get<float>();
-            record.vote_count = row["vote_count"].get<long>();
+            record.vote_count = row["vote_count"].get<int64_t>();
             strcpy(record.release_date, row["release_date"].get<string>().c_str());
-            record.ganancia = row["revenue"].get<long>();
-            record.tiempo = row["runtime"].get<long>();
+            record.ganancia = row["revenue"].get<int64_t>();
+            record.tiempo = row["runtime"].get<int64_t>();
             strcpy(record.lang, row["original_language"].get<string>().c_str());
 
             records.push_back(record);
