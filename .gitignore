@@ -6,3 +6,4 @@ main.exe
 main
 files/
 /dataset/*.csv
+/dataset/*.bin
