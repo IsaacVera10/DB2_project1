@@ -6,4 +6,5 @@ main.exe
 main
 files/
 /dataset/*.csv
-/dataset/*.bin
+/dataset/.venv/
+.DS_Store
