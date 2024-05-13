@@ -1,21 +1,37 @@
 #include "Sequential_file.h"
 #include <limits>
 
-int main(){
+//Variables globales constantes
+const int64_t MAX_RECORDS = 913035;
 
-    auto vec_data = generate_struct_records("dataset/movie_dataset.csv", 10000);
+vector<Record_SFile> vec_data;
+void using_vector_records(){
+    vec_data = generate_struct_records("dataset/movie_dataset.csv", MAX_RECORDS);
 
     // for(auto& v: vec_data){
     //     v.showData_line();
     // }
-    // cout<<endl;
-    
+
+    cout<<endl;
+}
+
+int main(){
+    //Generando los registros de .csv a .bin
+    records_csv_to_bin("dataset/movie_dataset.csv", MAX_RECORDS);
+
     Sequential_File file("data_sf.bin",1);
 
-    for(auto& v: vec_data){
-        file.add(v);
-    }
-    // // file.add(vec_data[20]);
+    ifstream movie_bin("./dataset/movie_dataset.bin", ios::binary);
+    if(!movie_bin.is_open()) throw runtime_error("Error al abrir el archivo");
+
+    // Record_SFile record;
+    // while(movie_bin.read(reinterpret_cast<char*>(&record), sizeof(Record_SFile))){
+    //     record.showData_line();cout<<endl;
+    // //     file.add(record);
+    // }
+    movie_bin.seekg(0, ios::end);
+    cout<<"\nCantidad de registros: "<<movie_bin.tellg()/sizeof(Record_SFile)<<endl;
+    movie_bin.close();
 
     file.print_file("data_sf.bin");
     cout<<endl;

@@ -88,5 +88,40 @@ vector<Record_SFile> generate_struct_records(string route_file, int64_t count = 
 
 }
 
+void records_csv_to_bin(string route_file, int64_t count = -1){
+    Record_SFile record;
+    try {
+        csv::CSVFormat format;
+        format.delimiter(',');
+        format.quote('"');
+        format.header_row(0);
 
+        csv::CSVReader reader("./"+route_file, format);
+
+        fstream file("./dataset/movie_dataset.bin", ios::binary | ios::out | ios::trunc);
+        if(!file.is_open()) throw runtime_error("Error al abrir el archivo");
+
+        for(auto& row : reader){
+            if(count>0) count --;
+            else if(count == 0) break;
+            
+            record.id = row["id"].get<int64_t>();
+            strcpy(record.name, row["title"].get<string>().c_str());
+            record.punt_promedio = row["vote_average"].get<float>();
+            record.vote_count = row["vote_count"].get<int64_t>();
+            strcpy(record.release_date, row["release_date"].get<string>().c_str());
+            record.ganancia = row["revenue"].get<int64_t>();
+            record.tiempo = row["runtime"].get<int64_t>();
+            strcpy(record.lang, row["original_language"].get<string>().c_str());
+
+            file.write(reinterpret_cast<char*>(&record), sizeof(Record_SFile));
+        }
+
+        file.close();
+    }
+    catch(exception& e){
+        cerr<<"\nError: "<<e.what()<<endl;
+    }
+
+}
 #endif //PROYECTO_1_DATA_H

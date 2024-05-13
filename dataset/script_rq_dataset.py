@@ -7,7 +7,7 @@ archivo_salida = 'movie_dataset_modify.csv'
 
 def modify_file():# CUIDADO: Este script modificará el archivo CSV original
     # Índice de la columna que quieres eliminar (índice 0 para la primera columna, 1 para la segunda, y así sucesivamente)
-    indice_columna_a_eliminar = 7  # Por ejemplo, eliminar la tercera columna
+    indice_columna_a_eliminar = 1  # Por ejemplo, eliminar la tercera columna
 
     # Lista para almacenar las filas modificadas
     filas_modificadas = []
@@ -19,9 +19,8 @@ def modify_file():# CUIDADO: Este script modificará el archivo CSV original
         # Itera sobre las filas del archivo CSV
         for row in reader:
             # Elimina la columna deseada de cada fila
-            del row[indice_columna_a_eliminar]
-            # Agrega la fila modificada a la lista
-            filas_modificadas.append(row)
+            if row[indice_columna_a_eliminar]!="571225":
+                filas_modificadas.append(row)
 
     # Escribe las filas modificadas en un nuevo archivo CSV
     with open(archivo_salida, 'w', newline='') as csvfile:
