@@ -7,4 +7,5 @@ main
 files/
 /dataset/*.csv
 /dataset/.venv/
+/dataset/*.bin
 .DS_Store

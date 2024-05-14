@@ -21,7 +21,7 @@ struct Record_SFile{
     int64_t punt_nextPosLogic = -1; //8 bits
     bool punt_next_is_In_Data = false; // 1bits
 
-    auto key_value(){
+    int64_t key_value(){
         return id;
     }
 
@@ -113,10 +113,8 @@ void records_csv_to_bin(string route_file, int64_t count = -1){
             record.ganancia = row["revenue"].get<int64_t>();
             record.tiempo = row["runtime"].get<int64_t>();
             strcpy(record.lang, row["original_language"].get<string>().c_str());
-
             file.write(reinterpret_cast<char*>(&record), sizeof(Record_SFile));
         }
-
         file.close();
     }
     catch(exception& e){
