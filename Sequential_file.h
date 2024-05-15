@@ -394,14 +394,10 @@ public:
         int64_t begin_pos;
         bool begin_is_in_data;
 
+        get_u_before(stoll(begin_key), file1, file2, true);
 
-        if(binary_search(stoll(begin_key))){ //O(log(n))
-            begin_pos = var_temps_SF::pos_found;
-            begin_is_in_data = var_temps_SF::found_in_data;
-        }else{
-            begin_pos = var_temps_SF::u_before;
-            begin_is_in_data = var_temps_SF::u_before_is_in_data;
-        }
+        begin_pos = var_temps_SF::u_before;
+        begin_is_in_data = var_temps_SF::u_before_is_in_data;
 
         fstream* temp_file = nullptr;
         if(begin_pos==-1){
@@ -445,20 +441,18 @@ public:
         return records;
     }
 
-
     bool remove_record(T key){
         fstream file1("files/" + this->filename, ios::binary | ios::in | ios::out);
         fstream file2("files/aux_sf.bin", ios::binary | ios::in | ios::out);
         if (!file1.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
         if (!file2.is_open()) throw runtime_error("No se pudo abrir el archivo metadata.dat");
 
-        file1.seekg(0, ios::beg);
-        file2.seekg(0, ios::beg);
+        get_u_before(stoll(key), file1, file2, true);
 
-        file1.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
-        file1.read(reinterpret_cast<char*>(&var_temps_SF::punt_pos), sizeof(var_temps_SF::punt_pos));
+        int64_t begin_pos;
+        bool begin_is_in_data;
 
-        file2.read(reinterpret_cast<char*>(&var_temps_SF::n_aux), sizeof(var_temps_SF::n_aux));
+
 
         
 

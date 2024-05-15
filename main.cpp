@@ -2,7 +2,7 @@
 #include <limits>
 
 //Variables globales constantes
-const int64_t MAX_RECORDS = 52;
+const int64_t MAX_RECORDS = 100;
 
 int main(){
     //1. Descomentar y generar los registros de .csv a .bin
@@ -37,7 +37,7 @@ int main(){
     cout<<endl;
 
     // file.remove("14");
-    auto vec = file.range_search("10","23");
+    auto vec = file.range_search("50","700000");
     for(auto& r: vec){
         r.showData_line();
     }
