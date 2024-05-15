@@ -2,7 +2,7 @@
 #include <limits>
 
 //Variables globales constantes
-const int64_t MAX_RECORDS = 30;
+const int64_t MAX_RECORDS = 100;
 
 int main(){
     //1. Descomentar y generar los registros de .csv a .bin
@@ -19,7 +19,7 @@ int main(){
     for(int i = 0; i<MAX_RECORDS; i++){
         movie_bin.read(reinterpret_cast<char*>(&record), sizeof(Record_SFile));
         file.add(record);
-        record.showData_line();
+        // record.showData_line();
     }
     movie_bin.seekg(0, ios::end);
     cout<<"\nCantidad de registros: "<<movie_bin.tellg()/sizeof(Record_SFile)<<endl;
