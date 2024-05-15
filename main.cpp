@@ -2,7 +2,7 @@
 #include <limits>
 
 //Variables globales constantes
-const int64_t MAX_RECORDS = 100;
+const int64_t MAX_RECORDS = 52;
 
 int main(){
     //1. Descomentar y generar los registros de .csv a .bin
@@ -33,12 +33,14 @@ int main(){
     file.print_file("aux_sf.bin");
     cout<<endl;
     // file.print_file("temp.bin");
-    file.search("299536").showData_line();
+    // file.search("1077280").showData_line();
     cout<<endl;
 
     // file.remove("14");
-    // auto vec = file.range_search("99862","14");
-
+    auto vec = file.range_search("10","23");
+    for(auto& r: vec){
+        r.showData_line();
+    }
     //Busqueda de registros
     // file.search("99862").showData_line();
     // cout<<endl;
