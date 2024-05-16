@@ -17,7 +17,7 @@ struct Record_SFile : public Record {
     Record_SFile(int64_t id, const char* name, float punt_promedio, int64_t vote_count, const char* release_date, int64_t ganancia, int64_t tiempo, const char* lang)
         : Record(id, name, punt_promedio, vote_count, release_date, ganancia, tiempo, lang) {}
 
-    Record_SFile(Record record){
+    explicit Record_SFile(Record record){
         this->id = record.id;
         strcpy(this->name, record.name);
         this->punt_promedio = record.punt_promedio;
@@ -28,7 +28,7 @@ struct Record_SFile : public Record {
         strcpy(this->lang, record.lang);
     }
 
-    void showData_line() {
+    void showData_line() override {
         cout << setw(8) << left << id << " | "
              << setw(74) << left << name << " | "
              << setw(6) << left << punt_promedio << " | "
@@ -44,9 +44,9 @@ struct Record_SFile : public Record {
 //Trabajaremos con posiciones lógicas
 
 namespace var_temps_SF{
-    int64_t n_data = 0, n_aux=0, u_before, l_after, pos_found;
+    int64_t n_data = 0, n_aux=0, u_before;
     int64_t punt_pos = 0;
-    bool punt_is_in_data = false, u_before_is_in_data = true, found_in_data = false;
+    bool punt_is_in_data = false, u_before_is_in_data = true;
     Record_SFile rec_temp, rec_found;
 }
 
@@ -54,7 +54,7 @@ class Sequential_File {
 private:
     string filename;
 
-    int64_t get_pos_logical(int64_t pos_fisica, bool is_in_data){
+    static int64_t get_pos_logical(int64_t pos_fisica, bool is_in_data){
         if(is_in_data){
             return (pos_fisica - (sizeof(var_temps_SF::n_data)+ sizeof(var_temps_SF::punt_pos) + sizeof(var_temps_SF::punt_is_in_data))) / sizeof(Record_SFile);
         }else{
@@ -62,7 +62,7 @@ private:
         }
     }
 
-    int64_t get_pos_fisica(int64_t pos_logical, bool is_in_data){
+    static int64_t get_pos_fisica(int64_t pos_logical, bool is_in_data){
         if(is_in_data){
             return (pos_logical * sizeof(Record_SFile)) + (sizeof(var_temps_SF::n_data)+ sizeof(var_temps_SF::punt_pos) + sizeof(var_temps_SF::punt_is_in_data));
         }else{
@@ -79,7 +79,7 @@ private:
 
         file.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
 
-        int64_t l=0, u=var_temps_SF::n_data-1, m=0;
+        int64_t l=0, u=var_temps_SF::n_data-1, m;
 
         while(l<=u){
             m = (l+u)/2;
@@ -90,8 +90,6 @@ private:
             }else if(var_temps_SF::rec_found.key_value() > key){
                 u = m-1;
             }else{
-                var_temps_SF::pos_found = m;
-                var_temps_SF::found_in_data = true;
                 found = true;
                 break;
             }
@@ -100,7 +98,6 @@ private:
 
         var_temps_SF::u_before = u;
         var_temps_SF::u_before_is_in_data = true;
-        var_temps_SF::l_after = l;
         var_temps_SF::punt_is_in_data = true;
 
         file.close();
@@ -108,10 +105,10 @@ private:
         return found;
     }
 
-    void get_u_before(int64_t record, fstream& file1, fstream& file2, bool add=0){//O(log(n)) + O(log(n))
+    void get_u_before(int64_t record, fstream &file1, fstream &file2) {//O(log(n)) + O(log(n))
         //1. Verificamos si el registro anterior está en data.bin o ya existe el record a insertar
         if(binary_search(record)){ //O(log(n)) -> Busqueda binaria
-                if(add)throw runtime_error("El registro ya existe");
+                throw runtime_error("El registro ya existe");
         }
 
         if(var_temps_SF::u_before!=-1){//Si el registro a insertar no es el primero
@@ -122,8 +119,9 @@ private:
         }
 
         //2. Verificamos si el puntero del record anterior se dirige a un registro en aux.bin
-        if(var_temps_SF::punt_is_in_data == false && var_temps_SF::punt_pos!=-1){
-            while(record > var_temps_SF::rec_temp.key_value() && var_temps_SF::punt_pos!=-1 && var_temps_SF::punt_is_in_data==false){
+        if(!var_temps_SF::punt_is_in_data && var_temps_SF::punt_pos != -1){
+            while(record > var_temps_SF::rec_temp.key_value() && var_temps_SF::punt_pos!=-1 &&
+                  !var_temps_SF::punt_is_in_data){
                 file2.seekg(get_pos_fisica(var_temps_SF::punt_pos, false), ios::beg);
                 file2.read(reinterpret_cast<char*>(&var_temps_SF::rec_temp), sizeof(var_temps_SF::rec_temp));
 
@@ -138,7 +136,7 @@ private:
     }
 
 public:
-    explicit Sequential_File(string filename, bool activate_trunc=0) : filename(std::move(filename)) {
+    explicit Sequential_File(string filename, bool activate_trunc=false) : filename(std::move(filename)) {
         fstream file1;
         fstream file2;
         if(activate_trunc){
@@ -231,7 +229,7 @@ public:
         }else{
             //Obtenemos el registro anterior al que se insertará
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            get_u_before(record.key_value(), file1, file2, true);
+            get_u_before(record.key_value(), file1, file2);
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             // cout<<"rec_before: ";
             // var_temps_SF::rec_temp.showData_line();
@@ -243,7 +241,7 @@ public:
             
             //Actualizamos la metadata del record anterior al que se insertará
             if(var_temps_SF::u_before!=-1){//Si el registro a insertar no es el primero
-                if(var_temps_SF::u_before_is_in_data==true){
+                if(var_temps_SF::u_before_is_in_data){
                     file1.seekp(get_pos_fisica(var_temps_SF::u_before, true), ios::beg);
                     file1.read(reinterpret_cast<char*>(&var_temps_SF::rec_temp), sizeof(var_temps_SF::rec_temp));
                     
@@ -294,7 +292,7 @@ public:
         var_temps_SF::punt_is_in_data = false;
     }
 
-    void reBuild(fstream& file1, fstream& file2){//Reconstruye el archivo data, pero también cierra los archivos para remover y renombrar.
+    static void reBuild(fstream& file1, fstream& file2){//Reconstruye el archivo data, pero también cierra los archivos para remover y renombrar.
         fstream file_temp("files/temp.bin", ios::binary | ios::trunc | ios::out);
         if (!file_temp.is_open()) throw runtime_error("No se pudo abrir el archivo temp.bin");
 
@@ -320,7 +318,7 @@ public:
 
         //-----------------------------------------------------------------------------------------
         //Reconstruyendo el archivo data.bin
-        fstream* temp_file = nullptr;
+        fstream* temp_file=nullptr;
 
         while(var_temps_SF::punt_pos!=-1 ){
             temp_file = var_temps_SF::punt_is_in_data ? &file1 : &file2;
@@ -361,6 +359,8 @@ public:
 
     }
     
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnreachableCode"
     Record_SFile search(T key){
         fstream file1("files/" + this->filename, ios::binary | ios::in | ios::out);
         if (!file1.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
@@ -387,16 +387,12 @@ public:
             fstream file2("files/aux_sf.bin", ios::binary | ios::in | ios::out);
             file2.seekg(get_pos_fisica(var_temps_SF::punt_pos, var_temps_SF::punt_is_in_data), ios::beg);
 
-            while(var_temps_SF::punt_is_in_data!=true && var_temps_SF::punt_pos!=-1){//O(log(n))
+            while(!var_temps_SF::punt_is_in_data && var_temps_SF::punt_pos != -1){//O(log(n))
                 file2.read(reinterpret_cast<char*>(&var_temps_SF::rec_temp), sizeof(var_temps_SF::rec_temp));
                 if(var_temps_SF::rec_temp.key_value()==stoll(key)){
-                    var_temps_SF::pos_found = var_temps_SF::punt_pos;
-                    var_temps_SF::found_in_data = false;
                     cout<<"++++++ Registro encontrado ++++++"<<endl;
                     return var_temps_SF::rec_temp;
                 }
-                var_temps_SF::pos_found = var_temps_SF::punt_pos;
-                var_temps_SF::found_in_data = var_temps_SF::punt_is_in_data;
 
                 var_temps_SF::punt_pos = var_temps_SF::rec_temp.punt_nextPosLogic;
                 var_temps_SF::punt_is_in_data = var_temps_SF::rec_temp.punt_next_is_In_Data;
@@ -409,8 +405,9 @@ public:
         }
         return var_temps_SF::rec_temp; //Evita un warning
     }
+#pragma clang diagnostic pop
 
-    vector<Record_SFile> range_search(T begin_key, T end_key){
+    vector<Record_SFile> range_search(T begin_key, T end_key){ // NOLINT(*-unnecessary-value-param)
         if(stoll(begin_key)>stoll(end_key)) throw runtime_error("El rango de busqueda es incorrecto");
         else if(stoll(begin_key)==stoll(end_key)) return {search(begin_key)};
         else if(stoll(begin_key)<0 || stoll(end_key)<0) throw runtime_error("Las claves deben ser positivas");
@@ -424,12 +421,15 @@ public:
         int64_t begin_pos;
         bool begin_is_in_data;
 
-        get_u_before(stoll(begin_key), file1, file2, true);
+        get_u_before(stoll(begin_key), file1, file2);
 
         begin_pos = var_temps_SF::u_before;
         begin_is_in_data = var_temps_SF::u_before_is_in_data;
 
-        fstream* temp_file = nullptr;
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnusedValue"
+        fstream* temp_file= nullptr;
+#pragma clang diagnostic pop
         if(begin_pos==-1){
             file1.seekg(0, ios::beg);
             file1.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
@@ -540,13 +540,9 @@ public:
         if (!file_temp.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
         file_temp.seekg(0, ios::beg);
         file_temp.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
-        cout<<var_temps_SF::n_data<<endl;
         var_temps_SF::n_data-=1;
-        cout<<var_temps_SF::n_data<<endl;
         file_temp.seekp(0, ios::beg);
-        cout<<file_temp.tellp()<<endl;
-        file_temp.write(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
-        cout<<file_temp.tellp()<<endl;
+        file_temp.write(reinterpret_cast<const char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
         file_temp.close();
 
         return true;
@@ -563,7 +559,7 @@ public:
         cout<<setw(6)<<"n_data: "<<left<<var_temps_SF::n_data;
 
         if(namefile==this->filename || namefile=="temp.bin"){
-            if(var_temps_SF::n_data==0 && var_temps_SF::punt_pos==0 && var_temps_SF::punt_is_in_data==false){
+            if(var_temps_SF::n_data==0 && var_temps_SF::punt_pos==0 && !var_temps_SF::punt_is_in_data){
                 cout<<endl<<"-------------------------------------------------"<<endl;
                 cout<<"No hay registros"<<endl;
                 return;

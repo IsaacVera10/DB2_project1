@@ -48,9 +48,9 @@ void test_sequential_file(){
         file.add(record_sf);
     }
     movie_bin.close();
-    // +++++++++++++++++++++++++++++++++++++++++++++++++
+    // // +++++++++++++++++++++++++++++++++++++++++++++++++
 
-    //3. Visualización de archivos
+    // //3. Visualización de archivos
     cout<<endl;
     file.print_file("data_sf.bin");
     cout<<endl;
@@ -58,8 +58,10 @@ void test_sequential_file(){
     cout<<endl;
 
     //ADVERTENCIA: Si se comentó la sección ADD, cambiar a 0 el segundo parámetro del constructor de Sequential_File
-    // //4. Remove record
-    if(file.remove_record("284054")) cout<<"Registro eliminado"<<endl;
+    //4. Remove record
+    if(file.remove_record("9802")) cout<<"Registro eliminado"<<endl;
+    if(file.remove_record("11")) cout<<"Registro eliminado"<<endl;
+    if(file.remove_record("791373")) cout<<"Registro eliminado"<<endl;
 
     cout<<endl;
     file.print_file("data_sf.bin");
@@ -67,15 +69,15 @@ void test_sequential_file(){
     file.print_file("aux_sf.bin");
     cout<<endl;
 
-    // //5. Busqueda de registros
+    //5. Busqueda de registros
     auto vec = file.range_search("23","150");
     for(auto& r: vec){
         r.showData_line();
     }
-    // cout<<endl;
-    // //6. Busqueda de registros
-    // file.search("99861").showData_line();
-    // cout<<endl;
+    cout<<endl;
+    //6. Busqueda de registros
+    file.search("99861").showData_line();
+    cout<<endl;
 }
 
 int main(){

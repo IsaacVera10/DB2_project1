@@ -10,16 +10,16 @@ using namespace csv;
 using namespace std;
 
 struct Record{
-    int64_t id;
-    char name[71];
-    float punt_promedio;
-    int64_t vote_count;
-    char release_date[11];
-    int64_t ganancia;
-    int64_t tiempo;
-    char lang[3];
+    int64_t id{};
+    char name[71]{};
+    float punt_promedio{};
+    int64_t vote_count{};
+    char release_date[11]{};
+    int64_t ganancia{};
+    int64_t tiempo{};
+    char lang[3]{};
 
-    int64_t key_value(){
+    int64_t key_value() const{
         return id;
     }
 
@@ -35,7 +35,7 @@ struct Record{
         strcpy(this->lang, lang);
     }
 
-    void showData_line(){
+    virtual void showData_line(){
         cout << setw(8) << left << id<< " | "
              << setw(74) << left << name<< " | "
              << setw(6) << left << punt_promedio<< " | "
@@ -47,7 +47,7 @@ struct Record{
     }
 };
 
-void records_csv_to_bin(string route_file, int64_t count = -1){
+void records_csv_to_bin(const string& route_file, int64_t count = -1){
     Record record;
     try {
         csv::CSVFormat format;
