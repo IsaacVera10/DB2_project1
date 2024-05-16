@@ -3,7 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <cmath>
-#include "dataset/data.h"
+#include "../dataset/data.h"
 #define T string
 
 using namespace std;
@@ -518,7 +518,7 @@ public:
             // cout<<"before: "<<var_temps_SF::u_before<<" | is_in_data: "<<var_temps_SF::u_before_is_in_data<<endl;
             // var_temps_SF::rec_temp.showData_line();
 
-            //2. Eliminamos el registro actualizando los punteros
+            //2. Eliminamos el registro actualizando los punteros del record anterior
             var_temps_SF::punt_pos = var_temps_SF::rec_temp.punt_nextPosLogic;
             var_temps_SF::punt_is_in_data = var_temps_SF::rec_temp.punt_next_is_In_Data;
 
@@ -535,6 +535,18 @@ public:
 
         if(file1.is_open()) file1.close();
         if(file2.is_open()) file2.close();
+
+        fstream file_temp("files/" + this->filename, ios::binary | ios::in);
+        if (!file_temp.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
+        file_temp.seekg(0, ios::beg);
+        file_temp.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
+        cout<<var_temps_SF::n_data<<endl;
+        var_temps_SF::n_data-=1;
+        cout<<var_temps_SF::n_data<<endl;
+        file_temp.seekp(0, ios::beg);
+        cout<<file_temp.tellp()<<endl;
+        file_temp.write(reinterpret_cast<const char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
+        file_temp.close();
 
         return true;
     }
