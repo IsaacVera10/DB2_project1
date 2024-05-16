@@ -2,7 +2,7 @@
 #include <limits>
 
 //Variables globales constantes
-const int64_t MAX_RECORDS = 31;
+const int64_t MAX_RECORDS = 1000;
 
 void visualizar_generar_bin(bool visualizar = false){
     records_csv_to_bin("dataset/movie_dataset.csv");
@@ -59,7 +59,7 @@ void test_sequential_file(){
 
     //ADVERTENCIA: Si se comentó la sección ADD, cambiar a 0 el segundo parámetro del constructor de Sequential_File
     // //4. Remove record
-    if(file.remove_record("76341")) cout<<"Registro eliminado"<<endl;
+    if(file.remove_record("284054")) cout<<"Registro eliminado"<<endl;
 
     cout<<endl;
     file.print_file("data_sf.bin");
@@ -68,7 +68,7 @@ void test_sequential_file(){
     cout<<endl;
 
     // //5. Busqueda de registros
-    auto vec = file.range_search("50","50");
+    auto vec = file.range_search("23","150");
     for(auto& r: vec){
         r.showData_line();
     }

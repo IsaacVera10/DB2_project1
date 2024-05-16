@@ -536,7 +536,7 @@ public:
         if(file1.is_open()) file1.close();
         if(file2.is_open()) file2.close();
 
-        fstream file_temp("files/" + this->filename, ios::binary | ios::in);
+        fstream file_temp("files/" + this->filename, ios::binary | ios::in | ios::out);
         if (!file_temp.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
         file_temp.seekg(0, ios::beg);
         file_temp.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
@@ -545,7 +545,8 @@ public:
         cout<<var_temps_SF::n_data<<endl;
         file_temp.seekp(0, ios::beg);
         cout<<file_temp.tellp()<<endl;
-        file_temp.write(reinterpret_cast<const char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
+        file_temp.write(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
+        cout<<file_temp.tellp()<<endl;
         file_temp.close();
 
         return true;
