@@ -5,9 +5,15 @@
 # include "csv.hpp"
 #include <cstring>
 #include <iomanip>
-
 using namespace csv;
+
 using namespace std;
+
+//-------- Global Path --------
+extern string data_path;
+extern string bin_path;
+//-------- Global Path --------
+
 
 struct Record{
     int64_t id{};
@@ -19,7 +25,7 @@ struct Record{
     int64_t tiempo{};
     char lang[3]{};
 
-    int64_t key_value() const{
+    int64_t key_value(){
         return id;
     }
 
@@ -47,7 +53,7 @@ struct Record{
     }
 };
 
-void records_csv_to_bin(const string& route_file, int64_t count = -1){
+void records_csv_to_bin(const string& name_file, int64_t count = -1){
     Record record;
     try {
         csv::CSVFormat format;
@@ -55,9 +61,9 @@ void records_csv_to_bin(const string& route_file, int64_t count = -1){
         format.quote('"');
         format.header_row(0);
 
-        csv::CSVReader reader("./"+route_file, format);
+        csv::CSVReader reader(data_path+name_file, format);
 
-        fstream file("./dataset/movie_dataset.bin", ios::binary | ios::out | ios::trunc);
+        fstream file(data_path+"movie_dataset.bin", ios::binary | ios::out | ios::trunc);
         if(!file.is_open()) throw runtime_error("Error al abrir el archivo");
         for(auto& row : reader){
             if(count>0) count --;

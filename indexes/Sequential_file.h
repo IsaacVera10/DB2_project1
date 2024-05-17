@@ -72,7 +72,7 @@ private:
 
     bool binary_search(int64_t key){//Busqueda binaria
         bool found = false;
-        ifstream file("files/" + this->filename, ios::binary | ios::in);
+        ifstream file(bin_path + this->filename, ios::binary | ios::in);
         if (!file.is_open()) throw runtime_error("No se pudo abrir el archivo " + filename);
 
         file.seekg(0, ios::beg);
@@ -140,8 +140,8 @@ public:
         fstream file1;
         fstream file2;
         if(activate_trunc){
-            file1.open("files/" + this->filename, ios::binary | ios::out | ios::trunc);
-            file2.open("files/aux_sf.bin", ios::binary | ios::out | ios::trunc);
+            file1.open(bin_path + this->filename, ios::binary | ios::out | ios::trunc);
+            file2.open(bin_path + "aux_sf.bin", ios::binary | ios::out | ios::trunc);
             if (!file1.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
             if (!file2.is_open()) throw runtime_error("No se pudo abrir el archivo metadata.dat");
 
@@ -151,8 +151,8 @@ public:
             
             file2.write(reinterpret_cast<const char*>(&var_temps_SF::n_aux), sizeof(var_temps_SF::n_aux));
         }else{
-            file1.open("files/" + this->filename, ios::binary | ios::out | ios::app);
-            file2.open("files/aux_sf.bin", ios::binary | ios::out | ios::app);
+            file1.open(bin_path + this->filename, ios::binary | ios::out | ios::app);
+            file2.open(bin_path + "aux_sf.bin", ios::binary | ios::out | ios::app);
             if (!file1.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
             if (!file2.is_open()) throw runtime_error("No se pudo abrir el archivo metadata.dat");
         }
@@ -162,8 +162,8 @@ public:
     }
 
     void add(Record_SFile record){
-        fstream file1("files/" + this->filename, ios::binary | ios::in | ios::out);
-        fstream file2("files/aux_sf.bin", ios::binary | ios::in | ios::out);
+        fstream file1(bin_path + this->filename, ios::binary | ios::in | ios::out);
+        fstream file2(bin_path + "aux_sf.bin", ios::binary | ios::in | ios::out);
         if (!file1.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
         if (!file2.is_open()) throw runtime_error("No se pudo abrir el archivo metadata.dat");
         
@@ -293,7 +293,7 @@ public:
     }
 
     static void reBuild(fstream& file1, fstream& file2){//Reconstruye el archivo data, pero también cierra los archivos para remover y renombrar.
-        fstream file_temp("files/temp.bin", ios::binary | ios::trunc | ios::out);
+        fstream file_temp(bin_path + "temp.bin", ios::binary | ios::out | ios::trunc);
         if (!file_temp.is_open()) throw runtime_error("No se pudo abrir el archivo temp.bin");
 
         file1.seekg(0, ios::beg);
@@ -342,12 +342,13 @@ public:
         file_temp.close();
 
         // ----------------------FINISH-----------------------------
-        ifstream file_temp1("files/temp.bin", ios::binary | ios::in);
+        ifstream file_temp1(bin_path + "temp.bin", ios::binary | ios::in);
+
         if(file_temp1.is_open()){
-            remove("files/data_sf.bin");
+            remove((bin_path + "data_sf.bin").c_str());
             file_temp1.close();
-            rename("files/temp.bin", "files/data_sf.bin");
-            file2.open("files/aux_sf.bin", ios::binary | ios::out | ios::trunc);
+            rename((bin_path + "temp.bin").c_str(), (bin_path + "data_sf.bin").c_str());
+            file2.open(bin_path + "aux_sf.bin", ios::binary | ios::out | ios::trunc);
             file2.seekp(0, ios::beg);
             var_temps_SF::n_aux = 0;
             file2.write(reinterpret_cast<const char*>(&var_temps_SF::n_aux), sizeof(var_temps_SF::n_aux));
@@ -362,7 +363,7 @@ public:
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "UnreachableCode"
     Record_SFile search(T key){
-        fstream file1("files/" + this->filename, ios::binary | ios::in | ios::out);
+        fstream file1(bin_path+ this->filename, ios::binary | ios::in | ios::out);
         if (!file1.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
         file1.seekg(0, ios::beg);
         file1.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
@@ -413,9 +414,9 @@ public:
         else if(stoll(begin_key)<0 || stoll(end_key)<0) throw runtime_error("Las claves deben ser positivas");
 
         vector<Record_SFile> records;
-        fstream file1("files/" + this->filename, ios::binary | ios::in);
+        fstream file1(bin_path + this->filename, ios::binary | ios::in);
         if (!file1.is_open()) throw runtime_error("No se pudo abrir el archivo " + filename);
-        fstream file2("files/aux_sf.bin", ios::binary | ios::in);
+        fstream file2(bin_path + "aux_sf.bin", ios::binary | ios::in);
         if (!file2.is_open()) throw runtime_error("No se pudo abrir el archivo metadata.dat");
 
         int64_t begin_pos;
@@ -478,8 +479,8 @@ public:
         
         search(key);//mejor caso O(log(n)) | peor caso O(n) + O(log(n))
         
-        fstream file1("files/" + this->filename, ios::binary | ios::in | ios::out);
-        fstream file2("files/aux_sf.bin", ios::binary | ios::in | ios::out);
+        fstream file1(bin_path + this->filename, ios::binary | ios::in | ios::out);
+        fstream file2(bin_path + "aux_sf.bin", ios::binary | ios::in | ios::out);
         if (!file1.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
         if (!file2.is_open()) throw runtime_error("No se pudo abrir el archivo metadata.dat");
 
@@ -536,7 +537,7 @@ public:
         if(file1.is_open()) file1.close();
         if(file2.is_open()) file2.close();
 
-        fstream file_temp("files/" + this->filename, ios::binary | ios::in | ios::out);
+        fstream file_temp(bin_path + this->filename, ios::binary | ios::in | ios::out);
         if (!file_temp.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
         file_temp.seekg(0, ios::beg);
         file_temp.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
@@ -549,7 +550,7 @@ public:
     }
 
     void print_file(const string& namefile){
-        ifstream file("files/" + namefile, ios::binary | ios::in);
+        ifstream file(bin_path + namefile, ios::binary | ios::in);
         if (!file.is_open()) throw runtime_error("No se pudo abrir el archivo " + filename);
 
         file.seekg(0, ios::beg);
