@@ -5,21 +5,23 @@
 #include <functional>
 #include <cmath>
 #include <bitset>
+#include <cstring>
+#include <cstdint>
 #include "../dataset/data.h"
 
 using namespace std;
 
-const int D = 8;
-const int FB = 100;
+const int D = 3;
+const int FB = 10;
 
-template<typename T>
+
 struct Bucket {
-    Record<T> records[FB];
-    int64_t next_bucket = -1;
+    Record records[FB];
+    long next_bucket = -1;
     int size = 0;
     int depth = 1;
-    string binary;
-    int64_t bucketAddress;
+    int binary = 0;
+    long bucketAddress = 0;
 
     Bucket(){}
 
@@ -27,7 +29,7 @@ struct Bucket {
         cout << "Size: " << this->size;
         cout<<" ["<<endl;
         for(int i=0;i<size;i++)
-            records[i].showData();
+            records[i].showData_line();
         cout<<"]"<<endl;
     }
 
@@ -36,14 +38,29 @@ struct Bucket {
         for (int i = p; i < size - 1; i++) {
             records[i] = records[i + 1];
         }
-        
+
         size--;
+    }
+
+    void info_line(){
+        cout<<"Size: "<<setw(10)<<left<<size<<" | "
+            <<"Depth: "<<setw(10)<<left<<depth<<" | "
+            <<"Binary: "<<setw(10)<<left<<binary<<" | "
+            <<"BucketAddress: "<<setw(10)<<left<<bucketAddress<<endl;
+    }
+
+    string toBinaryString() {
+        stringstream ss;
+        for (size_t i = 0; i < this->depth; ++i) {
+            ss << ((this->binary >> (this->depth - 1 - i)) & 1);
+        }
+        return ss.str();
     }
 };
 
 struct HashIndex {
-    string binary;
-    int64_t bucketAddress;
+    int binary;
+    long bucketAddress;
 
     HashIndex(){}
 
@@ -60,41 +77,45 @@ private:
     string fileName; //Data file name
     vector<HashIndex> indexVector; //To keep in RAM all indexes and save them in disk
 
-    bool fileExists()
-    {
+    bool fileExists(){
         ifstream dataFile(this->fileName, ios::binary);
         bool exists = dataFile.good();
         dataFile.close();
         return exists;
     }
 
-    void createFile()
-    {
-        ofstream dataFile(this->fileName, ios::app | ios::binary);
-        ofstream indexFile("indexFile.bin", ios::app | ios::binary);
+    void createFile(){
+        fstream dataFile(bin_path + this->fileName, ios::binary | ios::out | ios::trunc);
+        fstream indexFile(bin_path + "indexFile.bin", ios::binary | ios::out | ios::trunc);
+        if(!dataFile.is_open()) throw runtime_error("Error opening data file");
+        if(!indexFile.is_open()) throw runtime_error("Error opening index file");
 
-        Bucket<T> bucket;
-        bucket.binary = "0";
+        Bucket bucket;
+        bucket.binary = 0;
         bucket.bucketAddress = 0;
         dataFile.seekp(0, ios::beg);
         dataFile.write(reinterpret_cast<char *>(&bucket), sizeof(bucket)); //Insert first bucket in datafile
 
-        Bucket<T> bucket2;
+        Bucket bucket2;
         bucket2.bucketAddress = dataFile.tellp();
-        bucket2.binary = "1";
+        bucket2.binary = 1;
         //bucket.bucketAddress = sizeof(bucket);
         //dataFile.seekp(sizeof(bucket), ios::beg);
         dataFile.write(reinterpret_cast<char *>(&bucket2), sizeof(bucket2)); //Insert second bucket in datafile
-
+        bucket.info_line();
+        bucket2.info_line();
         dataFile.close();
+        cout<<"Data file created"<<endl;
 
         vector<string> binaryStrings = this->generateBinaryStrings(); //Generate 2^D binary strings
+        cout<<"Binary strings generated"<<endl;
 
         //Store in disk all 2^D indexes
         indexFile.seekp(0, ios::beg);
         for (int i = 0; i < binaryStrings.size(); ++i) {
+            cout<<"Binary: "<<binaryStrings[i]<<endl;
             HashIndex hashIndex;
-            hashIndex.binary = binaryStrings[i];
+            hashIndex.binary = stoi(binaryStrings[i]);
             hashIndex.bucketAddress = (this->makeAddress(binaryStrings[i], 1) == 0) ? 0 : sizeof(bucket);
 
             this->indexVector.push_back(hashIndex);
@@ -105,9 +126,9 @@ private:
     }
 
 
-    Record<T>* searchInBucket(Bucket<T> &bucket, T key) {
+    Record* searchInBucket(Bucket &bucket, T key) {
         for (int i = 0; i < bucket.size; i++) {
-            if (bucket.records[i].getKey() == key)
+            if (bucket.records[i].key_value() == key)
                 return &bucket.records[i];
         }
 
@@ -133,7 +154,7 @@ private:
         vector<string> binaryStrings;
 
         for (int i = 0; i < pow(2, D); ++i) {
-            string binaryString = bitset<D>(i).to_string();
+            string binaryString = bitset<D>(i).to_string().c_str();
             binaryStrings.push_back(binaryString);
         }
 
@@ -142,6 +163,9 @@ private:
 
     void loadIndex() {
         ifstream indexFile("indexFile.bin", ios::binary);
+        if(!indexFile.is_open())
+            throw runtime_error("Error opening index file");
+
         HashIndex hashIndex;
         indexFile.seekg(0, ios::beg);
         while(indexFile.read(reinterpret_cast<char*>(&hashIndex), sizeof(hashIndex))) {
@@ -152,38 +176,47 @@ private:
     }
 
 public:
-    explicit ExtHashFile(string fileName){
-        this->fileName = std::move(fileName);
-        if (!this->fileExists())
+    explicit ExtHashFile(string fileName, bool activate_trunc=false) : fileName(std::move(fileName)){
+        fstream file1;
+        fstream file2;
+        
+        if(activate_trunc){
+            cout<<"entra"<<endl;
             this->createFile();
-        else
-            this->loadIndex();
+        }
+        else{
+            cout<<"Entra 2"<<endl;
+            if (!this->fileExists())
+                this->createFile();
+            else
+                this->loadIndex();
+        }
     }
 
-    void writeRecord(Record<T> record) {
+    void writeRecord(Record record) {
         fstream dataFile(this->fileName, ios::binary | ios::out | ios::in);
 
         if(!dataFile.is_open())
             throw runtime_error("Error opening data file");
 
         //Locate bucket where record will be inserted
-        size_t hashValue = std::hash<T>{}(record.getKey());
-        cout << "hashValue: " << hashValue << endl;
+        size_t hashValue = std::hash<T>{}(record.key_value());
+        //cout << "hashValue: " << hashValue << endl;
         int index = hashValue % static_cast<int>(pow(2, D));
-        cout << "index: " << index << endl;
+        //cout << "index: " << index << endl;
 
 
-        int64_t bucketAddress = this->indexVector[index].bucketAddress;
-        cout << "bucketAddress: " << bucketAddress << endl;
+        long bucketAddress = this->indexVector[index].bucketAddress;
+        //cout << "bucketAddress: " << bucketAddress << endl;
 
 
         //Read bucket from disk
-        Bucket<T> bucket;
+        Bucket bucket;
         dataFile.seekg(bucketAddress, ios::beg);
         dataFile.read(reinterpret_cast<char*>(&bucket), sizeof(bucket));
 
-        cout << "bucket.size: " << bucket.size << endl;
-        cout << "bucket.binary: " << bucket.binary << endl;
+        //cout << "bucket.size: " << bucket.size << endl;
+        //cout << "bucket.binary: " << bucket.binary << endl;
 
         //If bucket has free space, insert new record and update bucket in data file
         if (bucket.size < FB) {
@@ -199,39 +232,55 @@ public:
             //Check bucket's local depth against global depth
             if (bucket.depth < D) {
                 //Split bucket
-                string newBinary1 = "0" + bucket.binary;
-                string newBinary2 = "1" + bucket.binary;
+                string binaryString = bucket.toBinaryString();
+
+                string newBinary1 = "0" + binaryString;
+                string newBinary2 = "1" + binaryString;
 
                 bucket.depth++;
-                bucket.binary = newBinary1;
+                bucket.binary = this->makeAddress(newBinary1, bucket.depth);
 
-                Bucket<T> newBucket;
+                Bucket newBucket;
                 newBucket.depth = bucket.depth;
-                newBucket.binary = newBinary2;
+                newBucket.binary = this->makeAddress(newBinary2, bucket.depth);
 
-                dataFile.seekp(0, ios::end); //Go to the end of file
-                int64_t newBucketAddress = dataFile.tellp();
+
 
                 //Redistribute elements in current bucket and newBucket
                 for (int i = 0; i < bucket.size; i++) {
-                    size_t hashKey = std::hash<T>{}(record.getKey());
+                    size_t hashKey = std::hash<T>{}(bucket.records[i].key_value());
                     int indexKey = hashKey % static_cast<int>(pow(2, D));
                     string binaryKey = bitset<D>(indexKey).to_string();
-                    if (this->makeAddress(binaryKey, bucket.depth) != this->makeAddress(bucket.binary, bucket.depth)) {
+                    //cout << "binaryKey: " << binaryKey << endl;
+                    int bucketNum = this->makeAddress(binaryKey, bucket.depth);
+                    //cout << "bucketNum: " << bucketNum << endl;
+
+                    if (bucketNum != bucket.binary) {
                         newBucket.records[newBucket.size] = bucket.records[i];
                         newBucket.size++;
                         bucket.deleteRecord(i);
                     }
                 }
 
-                //Insert new bucket to datafile
-                dataFile.write(reinterpret_cast<char *>(&newBucket), sizeof(newBucket));
+                //Save modified bucket to datafile
+                dataFile.seekp(bucketAddress, ios::beg);
+                dataFile.write(reinterpret_cast<char *>(&bucket), sizeof(bucket));
 
+                //Insert new bucket to datafile
+                dataFile.seekp(0, ios::end); //Go to the end of file
+                long newBucketAddress = dataFile.tellp();
+                newBucket.bucketAddress = newBucketAddress;
+                dataFile.write(reinterpret_cast<char *>(&newBucket), sizeof(newBucket));
+                dataFile.close();
 
                 //Update index on RAM
-                for (int i = 0; this->indexVector.size(); i++) {
+                for (int i = 0; i < this->indexVector.size(); i++) {
                     if (this->indexVector[i].bucketAddress == bucket.bucketAddress) {
-                        if (this->makeAddress(this->indexVector[i].binary, bucket.depth) != this->makeAddress(bucket.binary, bucket.depth)) {
+                        string binaryKey = bitset<D>(this->indexVector[i].binary).to_string();
+                        int bucketNum2 = this->makeAddress(binaryKey, bucket.depth);
+                        //cout << "bucketNum2: " << bucketNum2 << endl;
+
+                        if (bucketNum2 != bucket.binary) {
                             this->indexVector[i].bucketAddress = newBucketAddress;
                         }
                     }
@@ -240,13 +289,12 @@ public:
                 //Save modified index on Disk
                 ofstream indexFile("indexFile.bin",  ios::binary);
                 indexFile.seekp(0, ios::beg);
-                for (int i = 0; this->indexVector.size(); i++) {
+                for (int i = 0; i < this->indexVector.size(); i++) {
                     HashIndex hashIndex = this->indexVector[i];
                     indexFile.write(reinterpret_cast<char *>(&hashIndex), sizeof(hashIndex));
                 }
 
                 indexFile.close();
-                dataFile.close();
 
                 this->writeRecord(record); //Call recursively to insert new record that caused a split
             }
@@ -254,12 +302,12 @@ public:
             else {
                 //Put current bucket at the end of data file and become an overflow bucket
                 dataFile.seekp(0, ios::end);
-                int64_t overflowAddress = dataFile.tellp();
+                long overflowAddress = dataFile.tellp();
                 dataFile.write(reinterpret_cast<char*>(&bucket), sizeof(bucket));
 
                 //Insert new bucket with record and pointer to overflow bucket
                 // in the address of current bucket
-                Bucket<T> newBucket;
+                Bucket newBucket;
                 newBucket.records[0] = record;
                 newBucket.size = 1;
                 newBucket.next_bucket = overflowAddress;
@@ -271,7 +319,7 @@ public:
         }
     }
 
-    Record<T> search(T key){
+    Record search(T key){
         fstream dataFile(this->fileName, ios::binary | ios::in);
 
         if(!dataFile.is_open())
@@ -285,11 +333,11 @@ public:
         size_t hashValue = std::hash<T>{}(key);
         int index = hashValue % static_cast<int>(pow(2, D));
 
-        int64_t bucketAddress = this->indexVector[index].bucketAddress;
+        long bucketAddress = this->indexVector[index].bucketAddress;
 
-        Bucket<T> bucket;
+        Bucket bucket;
         bucket.next_bucket = bucketAddress;
-        Record<T>* record;
+        Record* record;
         do {
             //cout << "Next Bucket: " << bucket.next_bucket << endl;
             dataFile.seekg(bucket.next_bucket, ios::beg);
@@ -308,7 +356,7 @@ public:
     }
 
     void scanAll(){
-        ifstream dataFile(fileName, ios::binary);
+        ifstream dataFile(bin_path + fileName, ios::binary);
         if(!dataFile.is_open())
             throw runtime_error("Error opening data file");
 
@@ -317,7 +365,7 @@ public:
             throw runtime_error("File is empty");
 
         dataFile.seekg(0, ios::beg);
-        Bucket<T> bucket;
+        Bucket bucket;
         int contador = 0;
         while(dataFile.read(reinterpret_cast<char*>(&bucket), sizeof(bucket))){
             cout << "Bucket: " << contador  << " Next Bucket: " << bucket.next_bucket << endl;
@@ -329,8 +377,33 @@ public:
         dataFile.close();
     }
 
+    void print_file(const string& namefile) {
+        ifstream file(bin_path + namefile, ios::binary | ios::in);
+
+        if (!file.is_open()) {
+            cout << "Error opening file: " << namefile << endl;
+            return;
+        }
+
+        if (namefile == "indexFile.bin") { // Imprime el contenido del archivo de índices (indexFile)
+            HashIndex hashIndex;
+            while (file.read(reinterpret_cast<char*>(&hashIndex), sizeof(HashIndex))) {
+                cout << "Binary: " << hashIndex.binary << ", BucketAddress: " << hashIndex.bucketAddress << endl;
+            }
+        } else if (namefile == fileName) {// Imprime el contenido del archivo de datos (dataFile)
+            Bucket bucket;
+            while (file.read(reinterpret_cast<char*>(&bucket), sizeof(Bucket))) {
+                cout << "Binary: " << bucket.binary << ", BucketAddress: " << bucket.bucketAddress << endl;
+            }
+        } else {
+            cout << "Invalid file name" << endl;
+        }
+
+        file.close();
+    }
+
     /*
-    void delete(Record<T> record) {
+    void delete(Record record) {
 
     }
      */
@@ -340,41 +413,43 @@ public:
 
 //Testing
 
-void writeFileFromFile(string fileName){
-    ExtHashFile<int64_t> file(fileName);
-    Record<int64_t> record;
-    ifstream fileIn("dataset.csv");
-    while(true)
-    {
-        if(fileIn.eof()) break;
-        record.setData(fileIn);
-        cout << "Inserting: ....." << endl;
-        record.showData();
-        file.writeRecord(record); //Write to data file
-        //cout << "Finish Inserting...." << endl;
-        //cout << "---Show Data----" << endl;
-        //file.scanAll();
-    }
-    file.scanAll();
-    fileIn.close();
-}
+// void writeFileFromFile(string fileName){
+//     ExtHashFile<int64_t> file(fileName);
+//     Record record;
+//     ifstream fileIn("dataset.csv");
+//     int contador = 0;
+//     while(contador <= 50)
+//     {
+//         if(fileIn.eof()) break;
+//         record.setData(fileIn);
+//         cout << "Inserting: ....." << endl;
+//         record.showData();
+//         file.writeRecord(record); //Write to data file
+//         cout << "Finish Inserting...." << endl;
+//         cout << "---Show Data----" << endl;
+//         file.scanAll();
+//         contador++;
+//     }
+//     file.scanAll();
+//     fileIn.close();
+// }
 
-void readFile(string fileName){
-    ExtHashFile<int64_t> file(fileName);
-    cout<<"--------- show all data -----------\n";
-    file.scanAll();
-    //cout<<"--------- search Pedro -----------\n";
-    //Record<int64_t> record = file.search(1);
-    //record.showData();
+// void readFile(string fileName){
+//     ExtHashFile<int64_t> file(fileName);
+//     cout<<"--------- show all data -----------\n";
+//     file.scanAll();
+//     cout<<"--------- search 27205 -----------\n";
+//     Record<int64_t> record = file.search(27205);
+//     record.showData();
 
-    //cout<<"--------- search key not in file -----------\n";
-    //Record<int64_t> record2 = file.search(1);
-    //record2.showData();
-}
+//     cout<<"--------- search key not in file -----------\n";
+//     Record<long> record2 = file.search(1);
+//     record2.showData();
+// }
 
 
-int main(){
-    writeFileFromFile("dataHash.bin");
-    //readFile("dataHash.bin");
-    return 0;
-}
+// int main(){
+//     writeFileFromFile("dataHash.bin");
+//     readFile("dataHash.bin");
+//     return 0;
+// }
