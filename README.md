@@ -101,7 +101,25 @@ En el archivo `movie_dataset.bin` se encontrán los registros en binario, listos
 ## Sequential File
 Esta técnica de organización se caracteriza, principalmente, por su forma de organizar y almacenar los registros en un archivo de forma secuencial, es decir, uno detrás de otro. Cada record tiene un puntero que apunta al siguiente registro (***posición lógica***), y el último registro apunta a un valor nulo.
 
-### Clase
+>**Implementación**: Para la implementación de esta técnica, hemos elegido la ***Estrategia 1*** planteada en clases, que se refiere al uso de dos archivos: uno llamado  `data.bin` que contiene los registros ordenados por el *key* y otro llamado `aux.bin` que es el archivo donde insertaremos los registros nuevos como un Heap File pero estarán ordenados por sus respectivos punteros.
+
+
+### Elementos
+Para la implementación del sequential file, nos ayudamos de algunos elementos que facilitan la manipulación e implementación de las funciones de búsqueda, inserción, eliminación y búsqueda por rango.
+
+#### Estrutura Hija de Record: *Record_SFile*
+Cuando indexemos los registros con esta estructura, cada registro necesitará de un puntero que apunte a la siguiente posición lógica en el archivo. Para esto, creamos una estructura hija de `Record` que contenga estos elementos extras.
+```c++
+struct Record_SFile : public Record {
+    int64_t punt_nextPosLogic = -1; // 8 bits
+    bool punt_next_is_In_Data = false; // 1 bit
+    
+    Record_SFile(int64_t id, const char* name, float punt_promedio, int64_t vote_count, const char* release_date, int64_t ganancia, int64_t tiempo, const char* lang)
+        : Record(id, name, punt_promedio, vote_count, release_date, ganancia, tiempo, lang) {}
+    ...
+};
+```
+
 
 
 

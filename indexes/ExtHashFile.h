@@ -154,7 +154,9 @@ private:
         vector<string> binaryStrings;
 
         for (int i = 0; i < pow(2, D); ++i) {
-            string binaryString = bitset<D>(i).to_string().c_str();
+            bitset<D> num_binary(i);
+            string binaryString = num_binary.to_string();
+            cout<<binaryString<<endl;
             binaryStrings.push_back(binaryString);
         }
 
