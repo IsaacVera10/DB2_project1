@@ -44,8 +44,7 @@ struct Record_SFile : public Record {
 //Trabajaremos con posiciones lógicas
 
 namespace var_temps_SF{
-    int64_t n_data = 0, n_aux=0, u_before;
-    int64_t punt_pos = 0;
+    int64_t n_data = 0, n_aux=0, u_before, punt_pos = 0;
     bool punt_is_in_data = false, u_before_is_in_data = true;
     Record_SFile rec_temp, rec_found;
 }

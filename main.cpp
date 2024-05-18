@@ -85,8 +85,8 @@ void test_sequential_file(){
 }
 
 int main(){
-    // test_sequential_file();
-    ExtHashFile extHashFile("data_eh.bin", 1);
+    test_sequential_file();
+    // ExtHashFile extHashFile("data_eh.bin", 1);
 
     // extHashFile.print_file("data_eh.bin");
     // cout<<endl;

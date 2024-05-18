@@ -101,10 +101,14 @@ En el archivo `movie_dataset.bin` se encontrán los registros en binario, listos
 ## Sequential File
 Esta técnica de organización se caracteriza, principalmente, por su forma de organizar y almacenar los registros en un archivo de forma secuencial, es decir, uno detrás de otro. Cada record tiene un puntero que apunta al siguiente registro (***posición lógica***), y el último registro apunta a un valor nulo.
 
+<div style="text-align: center;">
+    <img src="images/sequential_file.png" alt="Sequential File: Estrategia 1" width = 250"/>
+</div>
+
 >**Implementación**: Para la implementación de esta técnica, hemos elegido la ***Estrategia 1*** planteada en clases, que se refiere al uso de dos archivos: uno llamado  `data.bin` que contiene los registros ordenados por el *key* y otro llamado `aux.bin` que es el archivo donde insertaremos los registros nuevos como un Heap File pero estarán ordenados por sus respectivos punteros.
 
 
-### Elementos
+### Elementos de ayuda
 Para la implementación del sequential file, nos ayudamos de algunos elementos que facilitan la manipulación e implementación de las funciones de búsqueda, inserción, eliminación y búsqueda por rango.
 
 #### Estrutura Hija de Record: *Record_SFile*
@@ -119,9 +123,19 @@ struct Record_SFile : public Record {
     ...
 };
 ```
+#### Variables globales
+Hemos hecho uso de vairables globales para evitar la creación constante de diversas variables en las funciones a implementar. Estas variables se encuentran encapsuladas en un *namespace* llamado `var_temps_SF`, algunas de las importantes son:
+ - `punt_pos`: De tipo `int64_t`, almacenará la posición lógica de un regitro.
+ - `punt_is_in_data`: De tipo `bool`, indicará si el registro de la posición lógica `punt_pos` se encuentra en el archivo `data.bin` o no(en `aux.bin`).
+ - `u_before`: De tipo `int64_t`, si es que el registro a *insertar* no existe, almacenará la posición lógica del que debería ser su antecesor. También ayudará en las funciones *search* y *range_search*.
 
+ - `u_before_is_in_data`: De tipo `bool`, indicará si el registro de la posición lógica `u_before` se encuentra en el archivo `data.bin` o no(en `aux.bin`).
+ - `rec_temp`: De tipo `Record_SFile`, almacenará temporalmente un registro para realizar operaciones con él.
 
-
+### `Class Sequential_File`
+#### Funciones privadas
+Implementamos algunas funciones privadas que nos ayudarán a realizar código recurrente en las funciones públicas de la clase `Sequential_File`.
+####
 
 ## ISAM
 
