@@ -385,7 +385,7 @@ public:
                 file1.read(reinterpret_cast<char*>(&var_temps_SF::punt_is_in_data), sizeof(var_temps_SF::punt_is_in_data));
             }
 
-            fstream file2("files/aux_sf.bin", ios::binary | ios::in | ios::out);
+            fstream file2(bin_path + "aux_sf.bin", ios::binary | ios::in | ios::out);
             file2.seekg(get_pos_fisica(var_temps_SF::punt_pos, var_temps_SF::punt_is_in_data), ios::beg);
 
             while(!var_temps_SF::punt_is_in_data && var_temps_SF::punt_pos != -1){//O(log(n))

@@ -106,6 +106,8 @@ Esta técnica de organización se caracteriza, principalmente, por su forma de o
 
 
 ## ISAM
+
+
 ## Extendible Hashing
 
 
