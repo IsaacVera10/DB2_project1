@@ -9,3 +9,5 @@ files/
 /dataset/.venv/
 /dataset/*.bin
 .DS_Store
+compile_commands.json
+out/
