@@ -11,4 +11,6 @@ add_executable(DB2_project1
         dataset/csv.hpp
         dataset/data.h
         indexes/Sequential_file.h
-        indexes/ISAM.h)
+        indexes/ISAM.h
+        parser/parsersql.h
+)

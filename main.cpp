@@ -1,7 +1,7 @@
 #include "indexes/Sequential_file.h"
 #include "dataset/data.h"
 #include "indexes/ExtHashFile.h"
-
+#include "parser/parsersql.h"
 string data_path = "dataset/";
 string bin_path = "files/";
 
@@ -82,14 +82,46 @@ void test_sequential_file(){
     cout<<endl;
 }
 
+void testParser(){
+    // Test for SELECT
+    string query = "SELECT * FROM tablaHash WHERE id = 1 USING ISAM";
+    Parser parser(query);
+    vector<Record> records;
+    parser.parse(records);
+
+    cout << string(120, '-') << endl;
+    // Test for SELECT with WHERE BETWEEN
+    query = "SELECT * FROM tablaHash WHERE id BETWEEN (1, 10) USING ISAM";
+    Parser parser1(query);
+    parser1.parse(records);
+    cout << string(120, '-') << endl;
+    // Test for CREATE TABLE
+    query = "CREATE TABLE tablaPruebaHash FROM FILE \"movies.csv\" USING INDEX SEQUENTIAL(\"id\")";
+    Parser parser2(query);
+    parser2.parse(records);
+    cout << string(120, '-') << endl;
+    // Test for INSERT
+    query = "INSERT INTO tablaHash VALUES (1, \"The Shawshank Redemption\", 9.33, 33333, \"1994-10-14\", 28341469, 142, \"en\") USING ISAM";
+    Parser parser3(query);
+    parser3.parse(records);
+    cout << string(120, '-') << endl;
+    // Test for DELETE
+    query = "DELETE FROM tablaHash WHERE id = 1 USING ISAM";
+    Parser parser4(query);
+    parser4.parse(records);
+}
+
+
+
+
 int main(){
-    test_sequential_file();
+//    test_sequential_file();
     // ExtHashFile extHashFile("data_eh.bin", 1);
 
     // extHashFile.print_file("data_eh.bin");
     // cout<<endl;
     // extHashFile.print_file("aux_eh.bin");
-    
+    testParser();
 
 
 
