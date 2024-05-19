@@ -153,6 +153,317 @@ Esta función solo funcionará en las siguiente funciones:
 
 ## Extendible Hashing
 
+El Extendible Hashing es un método de hashing dinámico que se ajusta a la cantidad de datos existentes. Es decir, el tamaño del achivo donde se aplica la técnica crece o se reduce en el tiempo. 
+
+<div style="text-align: center;">
+    <img src="images/ext_hashing.png" alt="Extendible Hashing: Estrategia 3" width = 250"/>
+</div>
+
+Las principales características del Extendible Hashing son las siguientes:
+
+- Directorios: Los directorios guardan punteros hacia las posiciones físicas de los buckets. La cantidad de directorios está definido por la profundidad global D que se define como hiperparámetro que es igual a 2^D. La función hash que se utiliza identifica el directorio al cual ubicarse.
+- Buckets: Estos pueden contener los keys con el cual se identifican los registros o los registros en sí mismos.
+- Profundidad global: Denota el número de bits que utiliza la función hash para identificar un directorio.
+- Profundidad local: Es igual a la profundidad global solo que está asociado a los buckets y no a los directorios. Se utiliza este dato para decidir el momento de hacer un split o un encadenamiento de buckets.
+
+Su implementación en este proyecto se hace principalmente en dos archivos: Uno para los directorios y otro para los buckets. Algo importante a mencionar es que al inicializar la clase ExtHashing se crean los 2^D directorios para aminorar las complejidades de inserción, búsqueda y eliminación.
+
+### Métodos importantes
+
+1. Insertar registro: Dado que el archivo de directorios ya fue construido inicialmente, en este punto solo usamos la función hash para ubicar el directorio que nos dará el puntero del bucket al que le corresponde el registro en el archivo de datos. De acuerdo con la capacidad del bucket FB y su profundidad local, se hacen las siguientes operaciones:
+   
+   - Inserta el registro en el bucket
+   - Se hace split del bucket. Es decir, se construye un nuevo bucket y se redistribuyen los registros entre el bucket actual y el nuevo bucket.
+   - Se hacer encadenamiento de buckets.
+   
+```cpp
+void writeRecord(Record<T> record) {
+        fstream dataFile(this->fileName, ios::binary | ios::out | ios::in);
+
+        if(!dataFile.is_open())
+            throw runtime_error("Error opening data file");
+
+        //Locate bucket where record will be inserted
+        size_t hashValue = std::hash<T>{}(record.getKey());
+        //cout << "hashValue: " << hashValue << endl;
+        int index = hashValue % static_cast<int>(pow(2, D));
+
+        long bucketAddress = this->indexVector[index].bucketAddress;
+
+        //Read bucket from disk
+        Bucket<T> bucket;
+        dataFile.seekg(bucketAddress, ios::beg);
+        dataFile.read(reinterpret_cast<char*>(&bucket), sizeof(bucket));
+
+        //If bucket has free space, insert new record and update bucket in data file
+        if (bucket.size < FB) {
+            bucket.records[bucket.size] = record;
+            bucket.size++;
+            dataFile.seekp(bucketAddress, ios::beg);
+            dataFile.write(reinterpret_cast<char *>(&bucket), sizeof(bucket));
+            dataFile.close();
+        }
+
+        else {
+
+            //Check bucket's local depth against global depth
+            if (bucket.depth < D) {
+                //Split bucket
+                string binaryString = bucket.toBinaryString();
+
+                string newBinary1 = "0" + binaryString;
+                string newBinary2 = "1" + binaryString;
+
+                bucket.depth++;
+                bucket.binary = this->makeAddress(newBinary1, bucket.depth);
+
+                Bucket<T> newBucket;
+                newBucket.depth = bucket.depth;
+                newBucket.binary = this->makeAddress(newBinary2, bucket.depth);
+
+
+
+                //Redistribute elements in current bucket and newBucket
+                for (int i = 0; i < bucket.size; i++) {
+                    size_t hashKey = std::hash<T>{}(bucket.records[i].getKey());
+                    int indexKey = hashKey % static_cast<int>(pow(2, D));
+                    string binaryKey = bitset<D>(indexKey).to_string();
+                    int bucketNum = this->makeAddress(binaryKey, bucket.depth);
+
+                    if (bucketNum != bucket.binary) {
+                        newBucket.records[newBucket.size] = bucket.records[i];
+                        newBucket.size++;
+                        bucket.deleteRecord(i);
+                    }
+                }
+
+                //Save modified bucket to datafile
+                dataFile.seekp(bucketAddress, ios::beg);
+                dataFile.write(reinterpret_cast<char *>(&bucket), sizeof(bucket));
+
+                //Insert new bucket to datafile
+                dataFile.seekp(0, ios::end); //Go to the end of file
+                long newBucketAddress = dataFile.tellp();
+                newBucket.bucketAddress = newBucketAddress;
+                dataFile.write(reinterpret_cast<char *>(&newBucket), sizeof(newBucket));
+                dataFile.close();
+
+                //Update index on RAM
+                for (int i = 0; i < this->indexVector.size(); i++) {
+                    if (this->indexVector[i].bucketAddress == bucket.bucketAddress) {
+                        string binaryKey = bitset<D>(this->indexVector[i].binary).to_string();
+                        int bucketNum2 = this->makeAddress(binaryKey, bucket.depth);
+                        //cout << "bucketNum2: " << bucketNum2 << endl;
+
+                        if (bucketNum2 != bucket.binary) {
+                            this->indexVector[i].bucketAddress = newBucketAddress;
+                        }
+                    }
+                }
+
+                //Save modified index on Disk
+                ofstream indexFile("indexFile.bin",  ios::binary);
+                indexFile.seekp(0, ios::beg);
+                for (int i = 0; i < this->indexVector.size(); i++) {
+                    HashIndex hashIndex = this->indexVector[i];
+                    indexFile.write(reinterpret_cast<char *>(&hashIndex), sizeof(hashIndex));
+                }
+
+                indexFile.close();
+
+                this->writeRecord(record); //Call recursively to insert new record that caused a split
+            }
+
+            else {
+                //Put current bucket at the end of data file and become an overflow bucket
+                dataFile.seekp(0, ios::end);
+                long overflowAddress = dataFile.tellp();
+                dataFile.write(reinterpret_cast<char*>(&bucket), sizeof(bucket));
+
+                //Insert new bucket with record and pointer to overflow bucket
+                // in the address of current bucket
+                Bucket<T> newBucket;
+                newBucket.records[0] = record;
+                newBucket.size = 1;
+                newBucket.next_bucket = overflowAddress;
+                dataFile.seekp(bucketAddress, ios::beg);
+                dataFile.write(reinterpret_cast<char*>(&newBucket), sizeof(newBucket));
+
+                dataFile.close();
+            }
+        }
+    }
+```
+
+También se hace uso de una función auxiliar makeAddress(), la cual recibe un número binario en string y retorna su representación en entero de los bits menos significativos de acuerdo a la profundidad que se indique. La función iene la siguiente implementación:
+
+```cpp
+    int makeAddress(string binaryString, int depth) {
+        int response = 0;
+        int mask = 1;
+        int binary = std::stoi(binaryString);
+
+        for(int j = 0; j < depth; j++) {
+            response = response << 1;
+            int lowBit = binary & mask;
+            response = response | lowBit;
+            binary = binary >> 1;
+        }
+
+        return response;
+    }
+
+```
+La complejidad de este método en el peor caso es O(FB + 2^D).
+
+2. Buscar registro: Busca el directorio correspondiente a la key del registro luego de aplicar la función hash, con la dirección de allí se busca en el archivo de datos para traer a memoria RAM el bucket. Busca dentro del bucket inicial o entre lo buckets encadenados y retorna el registro. Caso contrario lanza una excepción de que no encontró el registro. La complejidad de este método en el peor caso es O(FB).
+
+```cpp
+    Record<T> search(T key){
+        fstream dataFile(this->fileName, ios::binary | ios::in);
+
+        if(!dataFile.is_open())
+            throw runtime_error("Error opening data file");
+
+        dataFile.seekg(0, ios::end);
+        if(dataFile.tellg()==0)
+            throw runtime_error("File is empty");
+
+        //Locate bucket where record will be inserted
+        size_t hashValue = std::hash<T>{}(key);
+        int index = hashValue % static_cast<int>(pow(2, D));
+
+        long bucketAddress = this->indexVector[index].bucketAddress;
+
+        Bucket<T> bucket;
+        bucket.next_bucket = bucketAddress;
+        Record<T>* record;
+        do {
+            dataFile.seekg(bucket.next_bucket, ios::beg);
+            dataFile.read(reinterpret_cast<char*>(&bucket), sizeof(bucket));
+            record = this->searchInBucket(bucket, key);
+        } while(bucket.next_bucket != -1 && record == nullptr);
+
+        dataFile.close();
+
+        if (record == nullptr)
+            throw runtime_error("Key not found in data file");
+
+        Record rObj = (*record);
+        return rObj;
+    }
+```
+   
+3. Eliminar registro: Ubica el directorio correspondiente al valor obtenido luego de aplicar la función hash a la key del record a eliminar. Busca en los registros dentro del bucket correspondiente o los buckets encadenados y si lo encuentra, lo elimina moviendo todos los registros a la izquierda y disminuye el size del bucket. Luego de eso verifica si el bucket quedó vacío, si es así verifica también si se trata de un bucket encadenado o no. En caso no lo sea, aplica el merge con su bucket amigo (tienen mismo prefijo en la profundidad local anterior). En caso sí lo sea, copia los registros del siguiente bucket encadenado al bucket actual. Para el merge, actualiza el archivo de directorios y el vector de directorios en RAM. La complejidad de este método en el peor caso es O(FB + 2^D).
+
+```cpp
+
+void deleteRecord(T key) {
+        fstream dataFile(fileName, ios::binary | ios::in | ios::out);
+
+        if (!dataFile.is_open()) {
+            throw runtime_error("Error opening data file");
+        }
+
+        size_t hashValue = hash<T>{}(key);
+        int index = hashValue % static_cast<int>(pow(2, D));
+        long bucketAddress = indexVector[index].bucketAddress;
+
+        Bucket<T> bucket;
+        dataFile.seekg(bucketAddress, ios::beg);
+        dataFile.read(reinterpret_cast<char*>(&bucket), sizeof(bucket));
+
+        bool recordFound = false;
+        for (int i = bucket.size - 1; i >= 0; --i) {
+            if (bucket.records[i].getKey() == key) {
+                // Move the last record to the position of the deleted record
+                bucket.records[i] = bucket.records[bucket.size - 1];
+                bucket.size--;
+                recordFound = true;
+                break;
+            }
+        }
+
+        if (!recordFound) {
+            dataFile.close();
+            throw runtime_error("Record not found");
+        }
+
+        dataFile.seekp(bucketAddress, ios::beg);
+        dataFile.write(reinterpret_cast<char*>(&bucket), sizeof(bucket));
+
+        // Handle empty bucket scenario
+        if (bucket.size == 0) {
+            if (bucket.next_bucket != -1) {
+                // Load the overflow bucket
+                Bucket<T> nextBucket;
+                dataFile.seekg(bucket.next_bucket, ios::beg);
+                dataFile.read(reinterpret_cast<char*>(&nextBucket), sizeof(nextBucket));
+
+                // Copy records from the overflow bucket to the current bucket
+                for (int i = 0; i < nextBucket.size; ++i) {
+                    bucket.records[i] = nextBucket.records[i];
+                }
+                bucket.size = nextBucket.size;
+                bucket.next_bucket = nextBucket.next_bucket;
+
+                dataFile.seekp(bucketAddress, ios::beg);
+                dataFile.write(reinterpret_cast<char*>(&bucket), sizeof(bucket));
+            } else {
+                mergeBuckets(bucket, bucketAddress);
+            }
+        }
+
+        dataFile.close();
+    }
+
+    void mergeBuckets(Bucket<T>& emptyBucket, long emptyBucketAddress) {
+        // Identify the buddy bucket
+        int buddyBinary = emptyBucket.binary ^ 1; // Flip the last bit to find the buddy
+        long buddyAddress = -1;
+        for (const auto& hashIndex : indexVector) {
+            if (hashIndex.binary == buddyBinary) {
+                buddyAddress = hashIndex.bucketAddress;
+                break;
+            }
+        }
+
+
+        fstream dataFile(fileName, ios::binary | ios::in | ios::out);
+        if (!dataFile.is_open()) {
+            throw runtime_error("Error opening data file");
+        }
+
+        Bucket<T> buddyBucket;
+        dataFile.seekg(buddyAddress, ios::beg);
+        dataFile.read(reinterpret_cast<char*>(&buddyBucket), sizeof(buddyBucket));
+
+        // Check if the buddy bucket is mergeable
+        if (buddyBucket.depth == emptyBucket.depth) {
+            buddyBucket.depth--;
+
+            for (auto& hashIndex : indexVector) {
+                if (hashIndex.bucketAddress == emptyBucketAddress || hashIndex.bucketAddress == buddyAddress) {
+                    hashIndex.bucketAddress = buddyAddress;
+                }
+            }
+
+            // Update buddy bucket to data file
+            dataFile.seekp(buddyAddress, ios::beg);
+            dataFile.write(reinterpret_cast<char*>(&buddyBucket), sizeof(buddyBucket));
+        }
+
+        dataFile.close();
+
+        // Update index vector back to index file
+        ofstream indexFile("indexFile.bin", ios::binary | ios::out | ios::trunc);
+        for (const auto& hashIndex : indexVector) {
+            indexFile.write(reinterpret_cast<const char*>(&hashIndex), sizeof(hashIndex));
+        }
+        indexFile.close();
+    }
+
+```
 
 # Autores
 
