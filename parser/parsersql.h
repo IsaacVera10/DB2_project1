@@ -15,7 +15,7 @@
 #include <vector>
 #include <cstdint>
 #include <iomanip>
-#include "data.h"
+#include "../dataset/data.h"
 
 // #include "Sequential.h"
 // #include "ISAM.h"

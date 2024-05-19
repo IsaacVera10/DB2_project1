@@ -1,15 +1,13 @@
 #include "indexes/Sequential_file.h"
 #include "dataset/data.h"
-#include "indexes/ExtHashFile.h"
 #include "parser/parsersql.h"
-string data_path = "dataset/";
-string bin_path = "files/";
+
 
 //Variables globales constantes
 const int64_t MAX_RECORDS = 1000;
 
 void visualizar_generar_bin(bool visualizar = false){
-    // records_csv_to_bin("movie_dataset.csv");
+    records_csv_to_bin("movie_dataset.csv");
     // ++++++++++Manejo de movie_dataset.bin++++++++++++
     ifstream movie_bin(data_path+"movie_dataset.bin", ios::binary);
     if(!movie_bin.is_open()) throw runtime_error("Error al abrir el archivo");
@@ -115,13 +113,10 @@ void testParser(){
 
 
 int main(){
-//    test_sequential_file();
+   test_sequential_file();
     // ExtHashFile extHashFile("data_eh.bin", 1);
 
-    // extHashFile.print_file("data_eh.bin");
-    // cout<<endl;
-    // extHashFile.print_file("aux_eh.bin");
-    testParser();
+    // testParser();
 
 
 

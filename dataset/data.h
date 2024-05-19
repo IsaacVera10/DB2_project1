@@ -11,8 +11,8 @@ using namespace csv;
 using namespace std;
 
 //-------- Global Path --------
-extern string data_path;
-extern string bin_path;
+string data_path = "dataset/";
+string bin_path = "files/";
 //-------- Global Path --------
 
 struct Record {
@@ -90,7 +90,46 @@ struct Record {
 
     }
 
+    void setData(ifstream &file) {
+        std::string line;
+        if (std::getline(file, line)) {
+            std::vector<std::string> fields;
+            std::string field;
+            bool inQuotes = false;
 
+            // Custom parsing to handle quoted fields
+            for (char ch: line) {
+                if (ch == '"') {
+                    inQuotes = !inQuotes;
+                } else if (ch == ',' && !inQuotes) {
+                    fields.push_back(field);
+                    field.clear();
+                } else {
+                    field += ch;
+                }
+            }
+            fields.push_back(field);
+
+            if (fields.size() == 8) { // Ensure we have the right number of fields
+                id = std::stoll(fields[0]);
+
+                std::strncpy(name, fields[1].c_str(), sizeof(name));
+                name[sizeof(name) - 1] = '\0'; // Ensure null-termination
+
+                punt_promedio = std::stof(fields[2]);
+                vote_count = std::stoll(fields[3]);
+
+                std::strncpy(release_date, fields[4].c_str(), sizeof(release_date));
+                release_date[sizeof(release_date) - 1] = '\0'; // Ensure null-termination
+
+                ganancia = std::stoll(fields[5]);
+                tiempo = std::stoll(fields[6]);
+
+                std::strncpy(lang, fields[7].c_str(), sizeof(lang));
+                lang[sizeof(lang) - 1] = '\0'; // Ensure null-termination
+            }
+        }
+    }
     virtual void showData_line() {
         cout << setw(8) << left << id << " | " << setw(74) << left << name
              << " | " << setw(6) << left << punt_promedio << " | " << setw(6)
