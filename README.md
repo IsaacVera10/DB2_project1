@@ -164,9 +164,8 @@ Esta función solo funcionará en las siguiente funciones:
   * `insert(Record_SFile&)`: El record que se quiere insertar no existe.
   * `range_search(int64_t, int64_t)`: No nos interesa si el registro existe o no, solo queremos obtener los records límites:
     - Si el key límite inferior o superior existen, la **búsqueda binaria** seteará a `u_before` al record encontrado, si no existe, `u_before` será el record que debería ser su antecesor.
-
 ### `Class Sequential_File`: Funciones públicas
-#### `void add(Record record_sf) - O(log(n)) + O(log(n))`
+#### `void add(Record record_sf)`
 Inserta un registro en el archivo `aux.bin` de forma ordenada por su *key*. Si el registro ya existe, no lo inserta. El **reto** de esta función es mantener la integridad de los punteros de los registros, ya que si insertamos un registro en medio de dos registros existentes, debemos actualizar los punteros de los registros adyacentes.
 
 ```c++
@@ -308,7 +307,7 @@ Para el correcto manejo de los punteros, presentamos 3 casos:
     }
   ```
 
-#### `void reBuild(fstream&, fstream&) - O(n)`
+#### `void reBuild(fstream&, fstream&)`
 Esta función se encarga de reconstruir los archivos `data.bin` y `aux.bin` de manera ordenada. Para esto, se encarga de leer los registros de ambos archivos y escribirlos en un nuevo archivo llamado `temp.bin`. Luego, elimina el archivo `data.bin` y renombro el archivo `temp.bin` a `data.bin`. Además, abro nuevamente el archivo `aux.bin` en modo *truncate* para eliminar todos los registros y dejarlo vacío.
 
 ```c++
@@ -379,7 +378,7 @@ Esta función se encarga de reconstruir los archivos `data.bin` y `aux.bin` de m
 
 ```
 
-#### `void search(string key) - O(log(n))`
+#### `void search(string key)`
 Busca un registro con un *key* específico en el archivo `data.bin`. Si lo encuentra, imprime el registro. Si no lo encuentra, imprime un mensaje de error.
 Usamos la función `binary_search(int64_t key)` para buscar el registro y obtener la posición lógica del registro en el archivo. Si no lo encuentra, obtenemos la posición lógica del registro que debería ser su antecesor y si el puntero de este nos dirige a unr egistro en `aux.bin`, hacemos un recorrido lineal en dicho archivo(siguienod los punteros) hasta encontrar el registro.
 
@@ -427,7 +426,7 @@ Usamos la función `binary_search(int64_t key)` para buscar el registro y obtene
       }
       return var_temps_SF::rec_temp; //Evita un warning
 ```
-#### `vector<Record_SFile> range_search(string key, string key2) - O(log(n))`
+#### `vector<Record_SFile> range_search(string key, string key2)`
 Con ayuda de la función `get_u_before(int64_t, fstream&, fstream&)` obtenemos la posición lógica del registro que debería ser el antecesor del registro o la posición lógica del registro si existe.
 Luego, hacemos un recorrido lineal desde `u_before` hasta el registro que tenga un *key* menor o igual a `key2` y vamos insertando al vector resultante. Nos ayudaremos con un puntero fstream que irá intercambiando de tipo de file cuando lo requiera.
 
@@ -553,7 +552,7 @@ Luego, hacemos un recorrido lineal desde `u_before` hasta el registro que tenga 
         return records;
 ```
 
-#### `bool remove_record(T key) - O(n)`
+#### `bool remove_record(T key)`
 Primero buscamos el record con la función `search(string key)`, pues nos dirá si existe o no el record. Si existe, hacemos un recorrido lineal desde la metadata de `data.bin`. En este proceso, vamos almacenando el record anterior al actual, así cuando lleguemos al que queremos eliminar, simplemente guardamos el puntero del record a eliminar y se la asignamos al puntero del record anterior.
 
 ```C++
@@ -677,6 +676,29 @@ Primero buscamos el record con la función `search(string key)`, pues nos dirá 
     file.search("99861").showData_line();
     cout<<endl;
 ```
+
+### Análisis de Complejidad
+- **Función `add(Record record)`**
+  - *Mejor caso*: O(1)
+  - *Peor caso*: O(log(n))+O(log(n))
+  >En el mejor caso, el registro a insertar es el primero en el archivo `data.bin`, por lo que la complejidad es O(1). En el peor caso, el registro a insertar es el último en el archivo `data.bin`, por lo que la complejidad es O(log(n)) por la búsqueda binaria y O(log(n)) por el recorrido lineal en `aux.bin`.
+
+- **Función `search(string key)`**
+  - *Mejor caso*: O(log(n))
+  - *Peor caso*: O(log(n))+O(log(n))
+  >En el mejor caso, el registro a buscar se encontrará en el archivo `data.bin` y con una búsqueda binaria se encontrará en O(log(n)). En el peor caso, el registro a buscar se encontrará en `aux.bin` y se hará un recorrido extra en O(log(n)).
+
+- **Función `range_search(string key, string key2)`**
+  - *Mejor caso*: O(log(n))
+  - *Peor caso*: +O(log(n)) + O(log(n) + n)
+  >En el mejor caso, el rango de búsqueda se encuentra en el archivo `data.bin` y se encontrará en O(log(n)). En el peor caso, el rango de búsqueda se encuentra en `aux.bin` y se hará un recorrido extra en O(log(n)), además de que puede que se tenga que recorrer todos los registros en `aux.bin` y `data.bin`.
+
+- **Función `remove_record(T key)`**
+  - *Mejor caso*: O(log(n)) + O(n)
+  - *Peor caso*: O(log(n))+O(log(n)) + O(n)
+  >En el mejor caso, el registro a eliminar se encuentra en el archivo `data.bin` y se eliminará en O(log(n)) accediendo a ella con un recorrido lineal. En el peor caso, el registro a eliminar se encuentra en `aux.bin` y se hará un recorrido extra en O(log(n)), además del recorrido lineal para acceder al record.
+  En ambos casos se hace un recorrido lineal extra, ya que debemos obtener el record anterior al que quiero eliminar.
+ 
 ## ISAM
  Esta técnica de organización se caracteriza por manejar índices secundarios que apunta a bloques de registros en un archivo de datos. Cada bloque tiene un tamaño fijo y contiene registros ordenados por su *key*. Los índice secundario se organizan en archivos de índices.
 
