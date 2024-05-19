@@ -466,7 +466,24 @@ void deleteRecord(T key) {
 ```
 # SQL Parser
 
-La implementación del parser SQL sigue los pasos de un compilador tradicional: análisis léxico y análisis sintáctico. En el análisis léxico tenemos un scanner que se encarga de generar tokens a partir del texto en SQL. Aquí se reconocen las palabras clave como **(SELECT, INSERT, DELETE, CREATE)**, identificadores **(Campos o ID's)**, operadores y valores. Luego, en el análisis sintáctico tenemos un parser que se encarga de analizar secuencialmente estos tokens, siguiendo las reglas definidas por la gramática. 
+La implementación del parser SQL sigue los pasos de un compilador tradicional: análisis léxico y análisis sintáctico. En el análisis léxico tenemos un scanner que se encarga de generar tokens a partir del texto en SQL. Aquí se reconocen las palabras clave como **(SELECT, INSERT, DELETE, CREATE)**, identificadores **(Campos o ID's)**, operadores y valores. Luego, en el análisis sintáctico tenemos un parser que se encarga de analizar secuencialmente estos tokens, siguiendo las reglas definidas por la gramática que se muestra a continuación:
+
+```
+StmtList ::= ( SelectStmt | InsertStmt | CreateStmt
+            | DeleteStmt ) "USING"
+
+SelectStmt ::= "SELECT" colum-list "FROM" 
+              table-name [where-clause]
+
+where-clause ::= "WHERE" condition
+
+condition ::= expression (comparison-operator expression)
+
+expression ::= column-name | literal
+
+comparison-operator ::= "=" | "!=" | ">" | "<" 
+                      | ">=" | "<="
+```
 
 ## Consultas
 
