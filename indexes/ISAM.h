@@ -290,7 +290,7 @@ public:
                     root_index_file.close();
                     second_index_file.close();
                     data_index_file.close();
-                    return true
+                    return true;
                 }
             }
             if (data_page.next != -1) {
