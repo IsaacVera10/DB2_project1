@@ -676,7 +676,7 @@ Primero buscamos el record con la función `search(string key)`, pues nos dirá 
     //6. Busqueda de registros
     file.search("99861").showData_line();
     cout<<endl;
-    ```
+```
 ## ISAM
 
 
