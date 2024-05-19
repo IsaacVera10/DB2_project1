@@ -9,6 +9,7 @@
   - [Sequential File](#sequential-file)
   - [ISAM](#isam)
   - [Extendible Hashing](#extendible-hashing)
+  - [Pruebas de uso y presentación](#Pruebas-de-uso-y-presentación)
 - [Autores](#autores)
 
 # Introducción
@@ -494,6 +495,29 @@ comparison-operator ::= "=" | "!=" | ">" | "<"
 | `CREATE` | CREATE INDEX nameIndex ON column USING typeIndex | 
 | `INSERT` |INSERT INTO table VALUES (value1,value2,...,valuen) |
 | `DELETE` | DELETE FROM table WHERE column = value |
+
+# Pruebas de uso y presentación
+
+## Integración de QT
+
+Para el apartado grafico se uso QT Creator, agregando una interfaz atractiva para el usuario.
+
+> Pagina principal
+
+![alt text](image.png)
+
+> Apartado de consultas sql
+
+![alt text](image-1.png)
+
+## Implementacion de funciones en el QT
+
+Se logro cargar archivos tanto .bin como .csv ademas de
+mostrarlos en el qt.
+
+![alt text](image-2.png)
+
+
 
 
 # Autores
