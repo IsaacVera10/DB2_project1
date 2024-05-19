@@ -504,18 +504,18 @@ Para el apartado grafico se uso QT Creator, agregando una interfaz atractiva par
 
 > Pagina principal
 
-![alt text](image.png)
+![alt text](images/image.png)
 
 > Apartado de consultas sql
 
-![alt text](image-1.png)
+![alt text](images/image-1.png)
 
 ## Implementacion de funciones en el QT
 
 Se logro cargar archivos tanto .bin como .csv ademas de
 mostrarlos en el qt.
 
-![alt text](image-2.png)
+![alt text](images/image-2.png)
 
 
 
