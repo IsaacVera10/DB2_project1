@@ -265,6 +265,11 @@ public:
         root_index_file.close();
         second_index_file.close();
         data_index_file.close();
+
+        std::sort(records.begin(), records.end(), [](const RecordType &a, const RecordType &b) {
+            return a.id < b.id;
+        });
+
         return records;
     }
 
