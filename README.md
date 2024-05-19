@@ -724,6 +724,15 @@ Primero buscamos el record con la función `search(string key)`, pues nos dirá 
   - *Peor caso*: O(log(n))+O(log(n)) + O(n)
   >En el mejor caso, el registro a eliminar se encuentra en el archivo `data.bin` y se eliminará en O(log(n)) accediendo a ella con un recorrido lineal. En el peor caso, el registro a eliminar se encuentra en `aux.bin` y se hará un recorrido extra en O(log(n)), además del recorrido lineal para acceder al record.
   En ambos casos se hace un recorrido lineal extra, ya que debemos obtener el record anterior al que quiero eliminar.
+
+### Medición de tiempos
+Hicimos un benchmark del desempeño de inserción y búsqueda en Sequential File con 100, 1000, 10000 y 913035 registros. Estas ejecuciones se hicieron en un sistema operativo GNU/Linux. Los resultados se muestran en la siguiente tabla:
+| **Cantidad de registros** |  **Tiempo de inserción (ms)**   |  **Tiempo de búsqueda (ms)**  |
+|:--------------------------:|:-------------------------------:|:-----------------------------:|
+| 100                        |               8                |              0                |
+| 1000                       |              329               |              0               |
+| 10000                      |             21737              |             430              |
+
  
 ## ISAM
  Esta técnica de organización se caracteriza por manejar índices secundarios que apunta a bloques de registros en un archivo de datos. Cada bloque tiene un tamaño fijo y contiene registros ordenados por su *key*. Los índice secundario se organizan en archivos de índices.
