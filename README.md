@@ -678,7 +678,77 @@ Primero buscamos el record con la función `search(string key)`, pues nos dirá 
     cout<<endl;
 ```
 ## ISAM
+ Esta técnica de organización se caracteriza por manejar índices secundarios que apunta a bloques de registros en un archivo de datos. Cada bloque tiene un tamaño fijo y contiene registros ordenados por su *key*. Los índice secundario se organizan en archivos de índices.
 
+<div style="text-align: center;">
+    <img src="images/isam.png" alt="ISAM: Estrategia 1" width = 250"/>
+</div>
+
+
+Nuestra implementación del ISAM maneja 3 indices:
+- **index_0_sorted.bin**: Contiene páginas de índices ordenadas por su *key* y apunta a las páginas de índices en el archivo `index_1_sorted.bin`
+- **index_1_sorted.bin**: Contiene los registros ordenados por su *key* y apunta a los bloques de registros en el archivo `index_2_sorted.bin`
+- **index_2_sorted.bin**: Contiene los registros ordenados por su *key* y apunta a los registros en el archivo de datos.
+
+Además de eso, la base de datos es cargada desde un csv, ordenada por su *key* y guardada en `sorted_dataset.bin`
+
+### `Class  ISAM`: Metodos importantes
+1. **`bool add(RecordType) - O(log(n))`**: Inserta un registro en la base de datos. Para esto, primero se busca la página de índices en `index_0_sorted.bin` que contenga la *key* del registro a insertar. Luego, se busca la página de índices en `index_1_sorted.bin` que contenga la *key* del registro a insertar. Finalmente, se busca el bloque de registros en `index_2_sorted.bin` que contenga la *key* del registro a insertar. Si no se encuentra, se inserta el registro en la posición correcta
+
+
+2. `vector<RecordType> search(KeyType key) - O(log(n))`: Busca un registro con una *key* específica en la base de datos. Para esto, primero se busca la página de índices en `index_0_sorted.bin` que contenga la *key* del registro a buscar. Luego, se busca la página de índices en `index_1_sorted.bin` que contenga la *key* del registro a buscar. Finalmente, se busca el bloque de registros en `index_2_sorted.bin` que contenga la *key* del registro a buscar. Si se encuentra, se retornan todos los registros con la key buscada.
+ 
+
+3. `bool remove(KeyType key) - O(log(n))`: Elimina un registro con una *key* específica en la base de datos. Para esto, primero se busca la página de índices en `index_0_sorted.bin` que contenga la *key* del registro a eliminar. Luego, se busca la página de índices en `index_1_sorted.bin` que contenga la *key* del registro a eliminar. Finalmente, se busca el bloque de registros en `index_2_sorted.bin` que contenga la *key* del registro a eliminar. Si se encuentra, se elimina el registro de manera lógica.
+
+
+4. `vector<RecordType> range_search(()`: Busca todos los registros con una *key* en un rango específico. Para esto, primero se busca la página de índices en `index_0_sorted.bin` que contenga la *key* del registro a buscar. Luego, se busca la página de índices en `index_1_sorted.bin` que contenga la *key* del registro a buscar. Finalmente, se busca el bloque de registros en `index_2_sorted.bin` que contenga la *key* del registro a buscar. Si se encuentra, se retornan todos los registros dentro del rango especificado.
+ 
+### Medición de tiempos
+
+Hicimos un benchmark del desempeño de inserción y búsqueda en ISAM con 100, 1000, 10000 y 100000 registros. Los resultados se muestran en la siguiente tabla:
+
+| **Cantidad de registros** |  **Tiempo de inserción (ms)**   |  **Tiempo de búsqueda (ms)**  |
+|:--------------------------:|:-------------------------------:|:-----------------------------:|
+| 100                        |                6                |               9               |
+| 1000                       |               54                |              37               |
+| 10000                      |               624               |              430              |
+Código usado para la medición:
+```c++
+void benchmark(){
+    int times[] = {100, 1000, 10000};
+    auto start = chrono::high_resolution_clock::now();
+    auto end = chrono::high_resolution_clock::now();
+    for (int time: times) {
+        start = chrono::high_resolution_clock::now();
+        for (int j = 0; j < time; j++) {
+            record.id = j;
+            strcpy(record.name, "Prueba");
+            record.punt_promedio = 8.4;
+            record.vote_count = 13893;
+            strcpy(record.release_date, "2008-07-16");
+            record.ganancia = 1044;
+            record.tiempo = 152;
+            strcpy(record.lang, "en");
+            isam.add(record);
+        }
+        end = chrono::high_resolution_clock::now();
+        cout << "Tiempo de inserción para " << time << " registros: "
+             << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl;
+    }
+
+    //tiempo de búsqueda para 100, 1000 y 10000 records
+    for (int time: times) {
+        start = chrono::high_resolution_clock::now();
+        for (int j = 0; j < time; j++) {
+            isam.search(j);
+        }
+        end = chrono::high_resolution_clock::now();
+        cout << "Tiempo de búsqueda para " << time << " registros: "
+             << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl;
+    }
+}
+```
 
 ## Extendible Hashing
 
