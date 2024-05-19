@@ -464,6 +464,20 @@ void deleteRecord(T key) {
     }
 
 ```
+# SQL Parser
+
+La implementación del parser SQL sigue los pasos de un compilador tradicional: análisis léxico y análisis sintáctico. En el análisis léxico tenemos un scanner que se encarga de generar tokens a partir del texto en SQL. Aquí se reconocen las palabras clave como **(SELECT, INSERT, DELETE, CREATE)**, identificadores **(Campos o ID's)**, operadores y valores. Luego, en el análisis sintáctico tenemos un parser que se encarga de analizar secuencialmente estos tokens, siguiendo las reglas definidas por la gramática. 
+
+## Consultas
+
+| **Consulta** | **Sentencia** | 
+|--------------|--------------|
+| `SELECT`  | SELECT * FROM table WHERE column = value | 
+| `SELECT`  | SELECT * FROM table WHERE column BETWEEN value1 AND value2  | 
+| `CREATE` | CREATE INDEX nameIndex ON column USING typeIndex | 
+| `INSERT` |INSERT INTO table VALUES (value1,value2,...,valuen) |
+| `DELETE` | DELETE FROM table WHERE column = value |
+
 
 # Autores
 
