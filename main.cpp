@@ -5,7 +5,7 @@
 
 
 //Variables globales constantes
-const int64_t MAX_RECORDS = 913035;
+const int64_t MAX_RECORDS = 10000;
 
 void visualizar_generar_bin(bool visualizar = false){
     records_csv_to_bin("movie_dataset.csv");
