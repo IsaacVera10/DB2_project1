@@ -1111,6 +1111,18 @@ void deleteRecord(T key) {
     }
 
 ```
+
+### Medición de tiempos
+
+Hicimos un benchmark del desempeño de inserción y búsqueda en Extendible Hashing con 100, 1000, 10000 y 100000 registros. Los resultados se muestran en la siguiente tabla:
+
+| **Cantidad de registros** |  **Tiempo de inserción (ms)**   |  **Tiempo de búsqueda (ms)**  |
+|:--------------------------:|:-------------------------------:|:-----------------------------:|
+| 100                        |                666                |               0.0430               |
+| 1000                       |               6521                |              0.02791              |
+| 10000                      |               63068               |              0.02891              |
+
+
 # SQL Parser
 
 La implementación del parser SQL sigue los pasos de un compilador tradicional: análisis léxico y análisis sintáctico. En el análisis léxico tenemos un scanner que se encarga de generar tokens a partir del texto en SQL. Aquí se reconocen las palabras clave como **(SELECT, INSERT, DELETE, CREATE)**, identificadores **(Campos o ID's)**, operadores y valores. Luego, en el análisis sintáctico tenemos un parser que se encarga de analizar secuencialmente estos tokens, siguiendo las reglas definidas por la gramática que se muestra a continuación:
