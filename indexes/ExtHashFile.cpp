@@ -8,117 +8,15 @@
 #include <cstring>
 #include <cstdint>
 
-
+#include "../dataset/data.h"
 
 using namespace std;
 
 const int D = 3;
 const int FB = 10;
 
-template<typename T>
-struct Record {
-    int64_t id;
-    char title[71];
-    float voteAverage;
-    int64_t voteCount;
-    char releaseDate[11];
-    int64_t revenue;
-    int64_t runtime;
-    char language[3];
-
-    void setData(ifstream &file) {
-        std::string line;
-        if (std::getline(file, line)) {
-            std::vector<std::string> fields;
-            std::string field;
-            bool inQuotes = false;
-
-            // Custom parsing to handle quoted fields
-            for (char ch: line) {
-                if (ch == '"') {
-                    inQuotes = !inQuotes;
-                } else if (ch == ',' && !inQuotes) {
-                    fields.push_back(field);
-                    field.clear();
-                } else {
-                    field += ch;
-                }
-            }
-            fields.push_back(field);
-
-            if (fields.size() == 8) { // Ensure we have the right number of fields
-                id = std::stoll(fields[0]);
-
-                std::strncpy(title, fields[1].c_str(), sizeof(title));
-                title[sizeof(title) - 1] = '\0'; // Ensure null-termination
-
-                voteAverage = std::stof(fields[2]);
-                voteCount = std::stoll(fields[3]);
-
-                std::strncpy(releaseDate, fields[4].c_str(), sizeof(releaseDate));
-                releaseDate[sizeof(releaseDate) - 1] = '\0'; // Ensure null-termination
-
-                revenue = std::stoll(fields[5]);
-                runtime = std::stoll(fields[6]);
-
-                std::strncpy(language, fields[7].c_str(), sizeof(language));
-                language[sizeof(language) - 1] = '\0'; // Ensure null-termination
-            }
-        }
-    }
-
-    void showData() {
-        cout<< "id: " << setw(10)<<left<<id;
-        cout<< "title: " << setw(10)<<left<<title;
-        cout<< "voteAverage: " << setw(10)<<left<<voteAverage;
-        cout<< "voteCount: " << setw(10)<<left<<voteCount;
-        cout<< "releaseDate: " << setw(10)<<left<<releaseDate;
-        cout<< "revenue: " << setw(10)<<left<<revenue;
-        cout<< "runtime: " << setw(10)<<left<<runtime;
-        cout<< "language: " << setw(10)<<left<<language << endl;
-
-    }
-
-    T getKey() {
-        return this->id;
-    }
-
-    // Default constructor
-    Record() = default;
-
-    // Copy constructor
-    /*Record(const Record<T>& other) {
-        id = other.id;
-        //title = other.title;
-        voteAverage = other.voteAverage;
-        voteCount = other.voteCount;
-        //releaseDate = other.releaseDate;
-        revenue = other.revenue;
-        runtime = other.runtime;
-        //language = other.language;
-    }
-     */
-
-    /*
-    Record<T>& operator=(const Record<T>& other) {
-        if (this != &other) {
-            id = other.id;
-            //title = other.title;
-            voteAverage = other.voteAverage;
-            voteCount = other.voteCount;
-            //releaseDate = other.releaseDate;
-            revenue = other.revenue;
-            runtime = other.runtime;
-            //language = other.language;
-        }
-        return *this;
-    }
-    */
-};
-
-template<typename T>
 struct Bucket {
-    Record<T> records[FB];
+    Record records[FB];
     long next_bucket = -1;
     int size = 0;
     int depth = 1;
@@ -131,7 +29,7 @@ struct Bucket {
         cout << "Size: " << this->size;
         cout<<" ["<<endl;
         for(int i=0;i<size;i++)
-            records[i].showData();
+            records[i].showData_line();
         cout<<"]"<<endl;
     }
 
@@ -185,13 +83,13 @@ private:
         ofstream dataFile(this->fileName, ios::app | ios::binary);
         ofstream indexFile("indexFile.bin", ios::app | ios::binary);
 
-        Bucket<T> bucket;
+        Bucket bucket;
         bucket.binary = 0;
         bucket.bucketAddress = 0;
         dataFile.seekp(0, ios::beg);
         dataFile.write(reinterpret_cast<char *>(&bucket), sizeof(bucket)); //Insert first bucket in datafile
 
-        Bucket<T> bucket2;
+        Bucket bucket2;
         bucket2.bucketAddress = dataFile.tellp();
         bucket2.binary = 1;
         //bucket.bucketAddress = sizeof(bucket);
@@ -217,9 +115,9 @@ private:
     }
 
 
-    Record<T>* searchInBucket(Bucket<T> &bucket, T key) {
+    Record* searchInBucket(Bucket &bucket, T key) {
         for (int i = 0; i < bucket.size; i++) {
-            if (bucket.records[i].getKey() == key)
+            if (bucket.records[i].key_value() == key)
                 return &bucket.records[i];
         }
 
@@ -275,14 +173,14 @@ public:
             this->loadIndex();
     }
 
-    void writeRecord(Record<T> record) {
+    void writeRecord(Record record) {
         fstream dataFile(this->fileName, ios::binary | ios::out | ios::in);
 
         if(!dataFile.is_open())
             throw runtime_error("Error opening data file");
 
         //Locate bucket where record will be inserted
-        size_t hashValue = std::hash<T>{}(record.getKey());
+        size_t hashValue = std::hash<T>{}(record.key_value());
         //cout << "hashValue: " << hashValue << endl;
         int index = hashValue % static_cast<int>(pow(2, D));
         //cout << "index: " << index << endl;
@@ -293,7 +191,7 @@ public:
 
 
         //Read bucket from disk
-        Bucket<T> bucket;
+        Bucket bucket;
         dataFile.seekg(bucketAddress, ios::beg);
         dataFile.read(reinterpret_cast<char*>(&bucket), sizeof(bucket));
 
@@ -322,7 +220,7 @@ public:
                 bucket.depth++;
                 bucket.binary = this->makeAddress(newBinary1, bucket.depth);
 
-                Bucket<T> newBucket;
+                Bucket newBucket;
                 newBucket.depth = bucket.depth;
                 newBucket.binary = this->makeAddress(newBinary2, bucket.depth);
 
@@ -330,7 +228,7 @@ public:
 
                 //Redistribute elements in current bucket and newBucket
                 for (int i = 0; i < bucket.size; i++) {
-                    size_t hashKey = std::hash<T>{}(bucket.records[i].getKey());
+                    size_t hashKey = std::hash<T>{}(bucket.records[i].key_value());
                     int indexKey = hashKey % static_cast<int>(pow(2, D));
                     string binaryKey = bitset<D>(indexKey).to_string();
                     //cout << "binaryKey: " << binaryKey << endl;
@@ -389,7 +287,7 @@ public:
 
                 //Insert new bucket with record and pointer to overflow bucket
                 // in the address of current bucket
-                Bucket<T> newBucket;
+                Bucket newBucket;
                 newBucket.records[0] = record;
                 newBucket.size = 1;
                 newBucket.next_bucket = overflowAddress;
@@ -401,7 +299,7 @@ public:
         }
     }
 
-    Record<T> search(T key){
+    Record search(T key){
         fstream dataFile(this->fileName, ios::binary | ios::in);
 
         if(!dataFile.is_open())
@@ -417,9 +315,9 @@ public:
 
         long bucketAddress = this->indexVector[index].bucketAddress;
 
-        Bucket<T> bucket;
+        Bucket bucket;
         bucket.next_bucket = bucketAddress;
-        Record<T>* record;
+        Record* record;
         do {
             //cout << "Next Bucket: " << bucket.next_bucket << endl;
             dataFile.seekg(bucket.next_bucket, ios::beg);
@@ -447,7 +345,7 @@ public:
             throw runtime_error("File is empty");
 
         dataFile.seekg(0, ios::beg);
-        Bucket<T> bucket;
+        Bucket bucket;
         int contador = 0;
         while(dataFile.read(reinterpret_cast<char*>(&bucket), sizeof(bucket))){
             cout << "Bucket: " << contador  << " Next Bucket: " << bucket.next_bucket << endl;
@@ -471,13 +369,13 @@ public:
         int index = hashValue % static_cast<int>(pow(2, D));
         long bucketAddress = indexVector[index].bucketAddress;
 
-        Bucket<T> bucket;
+        Bucket bucket;
         dataFile.seekg(bucketAddress, ios::beg);
         dataFile.read(reinterpret_cast<char*>(&bucket), sizeof(bucket));
 
         bool recordFound = false;
         for (int i = bucket.size - 1; i >= 0; --i) {
-            if (bucket.records[i].getKey() == key) {
+            if (bucket.records[i].key_value() == key) {
                 // Move the last record to the position of the deleted record
                 bucket.records[i] = bucket.records[bucket.size - 1];
                 bucket.size--;
@@ -498,7 +396,7 @@ public:
         if (bucket.size == 0) {
             if (bucket.next_bucket != -1) {
                 // Load the overflow bucket
-                Bucket<T> nextBucket;
+                Bucket nextBucket;
                 dataFile.seekg(bucket.next_bucket, ios::beg);
                 dataFile.read(reinterpret_cast<char*>(&nextBucket), sizeof(nextBucket));
 
@@ -519,7 +417,7 @@ public:
         dataFile.close();
     }
 
-    void mergeBuckets(Bucket<T>& emptyBucket, long emptyBucketAddress) {
+    void mergeBuckets(Bucket& emptyBucket, long emptyBucketAddress) {
         // Identify the buddy bucket
         int buddyBinary = emptyBucket.binary ^ 1; // Flip the last bit to find the buddy
         long buddyAddress = -1;
@@ -536,7 +434,7 @@ public:
             throw runtime_error("Error opening data file");
         }
 
-        Bucket<T> buddyBucket;
+        Bucket buddyBucket;
         dataFile.seekg(buddyAddress, ios::beg);
         dataFile.read(reinterpret_cast<char*>(&buddyBucket), sizeof(buddyBucket));
 
@@ -572,15 +470,15 @@ public:
 
 void writeFileFromFile(string fileName){
     ExtHashFile<int64_t> file(fileName);
-    Record<int64_t> record;
-    ifstream fileIn("dataset.csv");
+    Record record;
+    ifstream fileIn("../dataset/movie_dataset.csv");
     int contador = 0;
     while(contador <= 50)
     {
         if(fileIn.eof()) break;
         record.setData(fileIn);
         cout << "Inserting: ....." << endl;
-        //record.showData();
+        // record.showData_line();
         file.writeRecord(record); //Write to data file
         //cout << "Finish Inserting...." << endl;
         //cout << "---Show Data----" << endl;
@@ -596,15 +494,15 @@ void readFile(string fileName){
     //cout<<"--------- show all data -----------\n";
     //file.scanAll();
     cout<<"--------- search 27205 -----------\n";
-    Record<int64_t> record = file.search(27205);
-    record.showData();
+    Record record = file.search(27205);
+    record.showData_line();
 
     cout<<"--------- delete 27205 -----------\n";
     file.deleteRecord(27205);
 
     cout<<"--------- search key not in file -----------\n";
-    Record<int64_t> record2 = file.search(27205);
-    record2.showData();
+    Record record2 = file.search(27205);
+    record2.showData_line();
 }
 
 
