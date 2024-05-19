@@ -45,11 +45,9 @@ void test_sequential_file(){
     if(!movie_bin.is_open()) throw runtime_error("Error al abrir el archivo");
 
     Record record;
-    Record_SFile record_sf;
     for(int i = 0; i<MAX_RECORDS; i++){
         movie_bin.read(reinterpret_cast<char*>(&record), sizeof(Record));
-        record_sf = Record_SFile(record);
-        file.add(record_sf);
+        file.add(record);
     }
     movie_bin.close();
     // // +++++++++++++++++++++++++++++++++++++++++++++++++

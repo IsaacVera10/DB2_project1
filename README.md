@@ -105,6 +105,7 @@ Esta técnica de organización se caracteriza, principalmente, por su forma de o
     <img src="images/sequential_file.png" alt="Sequential File: Estrategia 1" width = 250"/>
 </div>
 
+
 >**Implementación**: Para la implementación de esta técnica, hemos elegido la ***Estrategia 1*** planteada en clases, que se refiere al uso de dos archivos: uno llamado  `data.bin` que contiene los registros ordenados por el *key* y otro llamado `aux.bin` que es el archivo donde insertaremos los registros nuevos como un Heap File pero estarán ordenados por sus respectivos punteros.
 
 
@@ -132,10 +133,20 @@ Hemos hecho uso de vairables globales para evitar la creación constante de dive
  - `u_before_is_in_data`: De tipo `bool`, indicará si el registro de la posición lógica `u_before` se encuentra en el archivo `data.bin` o no(en `aux.bin`).
  - `rec_temp`: De tipo `Record_SFile`, almacenará temporalmente un registro para realizar operaciones con él.
 
-### `Class Sequential_File`
-#### Funciones privadas
+### `Class Sequential_File`: Funciones privadas
 Implementamos algunas funciones privadas que nos ayudarán a realizar código recurrente en las funciones públicas de la clase `Sequential_File`.
 ####
+- **`int64_t get_pos_logical(int64_t, bool)`**: Dado un valor de tipo `int64_t`(posición física) y un valor de tipo `bool`(si el registro está en `data.bin` o no), nos devolverá la posición lógica del registro en el archivo.
+- **`int64_t get_pos_fisica(int64_t, bool)`**: Dado un valor de tipo int64_t(posición lógica) y un valor de tipo bool(si el registro está en data.bin o no), nos devolverá la posición física del registro en el archivo.
+- **`bool binary_search(int64_t key)`**: Realiza una búsqueda binaria en el archivo `data.bin` para encontrar un registro con un *key* específico. 
+  * Si no lo encuentra, nos devolverá `false` y la variable `u_before` almacenará la posición lógica del registro que debería ser su antecesor. `u_before` será -1 si el registro a buscar es menor que el primer registro.
+  * Si lo encuentra, nos devolverá `true` y la variable `punt_pos` almacenará la posición lógica del registro.
+
+- **`get_u_before(int64_t, fstream&, fstream&)`**: Dado un valor de tipo `int64_t` que es la **key** de un registro, nos devolverá la posición lógica del registro que debería ser su antecesor almacenado en la variable global `u_before` y `u_before_is_in_data` dicho registro se encuentra en `data.bin` o no. 
+Esta función solo funcionará en las siguiente funciones:
+  * `insert(Record_SFile&)`: El record que se quiere insertar no existe.
+  * `range_search(int64_t, int64_t)`: No nos interesa si el registro existe o no, solo queremos obtener los records límites:
+    - Si el key límite inferior o superior existen, la **búsqueda binaria** seteará a `u_before` al record encontrado, si no existe, `u_before` será el record que debería ser su antecesor.
 
 ## ISAM
 

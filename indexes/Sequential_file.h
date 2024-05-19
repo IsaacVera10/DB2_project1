@@ -160,7 +160,9 @@ public:
         file2.close();
     }
 
-    void add(Record_SFile record){
+    void add(Record record_sf){
+        Record_SFile record(record_sf);
+
         fstream file1(bin_path + this->filename, ios::binary | ios::in | ios::out);
         fstream file2(bin_path + "aux_sf.bin", ios::binary | ios::in | ios::out);
         if (!file1.is_open()) throw runtime_error("No se pudo abrir el archivo " + this->filename);
