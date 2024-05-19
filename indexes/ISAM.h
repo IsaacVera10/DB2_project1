@@ -63,11 +63,12 @@ public:
         IndexPage<decltype(RecordType::id)> search_page;
         size_t found_page_address = 0;
         bool found = false;
-        while (root_index_file.read(search_page.deserialize(), sizeof(search_page)) && !found) {
+        while (!found && root_index_file.read(search_page.deserialize(), sizeof(search_page))) {
             for (int i = 0; i < search_page.n_keys; i++ && !found) {
                 if (new_record.id < search_page.key[i]) {
                     found_page_address = search_page.children[i];
                     found = true;
+                    break;
                 }
             }
         }
@@ -78,14 +79,14 @@ public:
         fstream second_index_file(index_paths[1], ios::in | ios::binary);
         IndexPage<decltype(RecordType::id)> second_index_page;
         second_index_file.seekg((streamoff) found_page_address);
-        second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page));
         size_t found_second_page_address = 0;
         found = false;
-        while (second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page)) && !found) {
+        while (!found && second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page))) {
             for (int i = 0; i < second_index_page.n_keys; i++ && !found) {
                 if (new_record.id < second_index_page.key[i]) {
                     found_second_page_address = second_index_page.children[i];
                     found = true;
+                    break;
                 }
             }
         }
@@ -136,11 +137,12 @@ public:
         IndexPage<decltype(RecordType::id)> search_page;
         size_t found_page_address = 0;
         bool found = false;
-        while (root_index_file.read(search_page.deserialize(), sizeof(search_page)) && !found) {
-            for (int i = 0; i < search_page.n_keys; i++ && !found) {
+        while (!found && root_index_file.read(search_page.deserialize(), sizeof(search_page))) {
+            for (size_t i = 0; i < search_page.n_keys; i++ && !found) {
                 if (search_id < search_page.key[i]) {
                     found_page_address = search_page.children[i];
                     found = true;
+                    break;
                 }
             }
         }
@@ -151,14 +153,14 @@ public:
         fstream second_index_file(index_paths[1], ios::in | ios::binary);
         IndexPage<decltype(RecordType::id)> second_index_page;
         second_index_file.seekg((streamoff) found_page_address);
-        second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page));
         size_t found_second_page_address = 0;
         found = false;
-        while (second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page)) && !found) {
+        while (!found && second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page))) {
             for (int i = 0; i < second_index_page.n_keys; i++ && !found) {
                 if (search_id < second_index_page.key[i]) {
                     found_second_page_address = second_index_page.children[i];
                     found = true;
+                    break;
                 }
             }
         }
@@ -198,11 +200,12 @@ public:
         IndexPage<decltype(RecordType::id)> search_page;
         size_t found_page_address = 0;
         bool found = false;
-        while (root_index_file.read(search_page.deserialize(), sizeof(search_page)) && !found) {
-            for (int i = 0; i < search_page.n_keys; i++ && !found) {
+        while (!found && root_index_file.read(search_page.deserialize(), sizeof(search_page))) {
+            for (size_t i = 0; i < search_page.n_keys; i++ && !found) {
                 if (start_id < search_page.key[i]) {
                     found_page_address = search_page.children[i];
                     found = true;
+                    break;
                 }
             }
         }
@@ -213,14 +216,14 @@ public:
         fstream second_index_file(index_paths[1], ios::in | ios::binary);
         IndexPage<decltype(RecordType::id)> second_index_page;
         second_index_file.seekg((streamoff) found_page_address);
-        second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page));
         size_t found_second_page_address = 0;
         found = false;
-        while (second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page)) && !found) {
+        while (!found && second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page))) {
             for (int i = 0; i < second_index_page.n_keys; i++ && !found) {
                 if (start_id < second_index_page.key[i]) {
                     found_second_page_address = second_index_page.children[i];
                     found = true;
+                    break;
                 }
             }
         }
@@ -228,8 +231,41 @@ public:
             found_second_page_address = second_index_page.children[second_index_page.n_keys];
         }
 
+        fstream data_index_file(index_paths[2], ios::in | ios::binary);
+        DataPage<RecordType> data_page;
+        data_index_file.seekg((streamoff) found_second_page_address);
+        bool inside_range = true;
+        streamoff last_page_address = found_second_page_address;
+        vector<RecordType> records;
+        while (inside_range && data_index_file.read(data_page.deserialize(), sizeof(data_page))) {
+            for (int i = 0; i < data_page.n_records; i++) {
+                if (data_page.records[i].id >= start_id && data_page.records[i].id <= end_id) {
+                    records.push_back(data_page.records[i]);
+                } else if (data_page.records[i].id > end_id) {
+                    inside_range = false;
+                    break;
+                }
+            }
+            if (data_page.next != -1) {
+                last_page_address = data_index_file.tellg();
+                while (data_page.next != -1) {
+                    data_index_file.seekg(data_page.next);
+                    data_index_file.read(data_page.deserialize(), sizeof(data_page));
+                    for (int i = 0; i < data_page.n_records; i++) {
+                        if (data_page.records[i].id >= start_id && data_page.records[i].id <= end_id) {
+                            records.push_back(data_page.records[i]);
+                        }
+                    }
+                }
+                data_index_file.seekg(last_page_address);
+            }
 
-        //TODO: Implement range search
+        }
+        //close files
+        root_index_file.close();
+        second_index_file.close();
+        data_index_file.close();
+        return records;
     }
 
     bool remove(decltype(RecordType::id) search_id) {
@@ -237,11 +273,12 @@ public:
         IndexPage<decltype(RecordType::id)> search_page;
         size_t found_page_address = 0;
         bool found = false;
-        while (root_index_file.read(search_page.deserialize(), sizeof(search_page)) && !found) {
+        while (!found && root_index_file.read(search_page.deserialize(), sizeof(search_page))) {
             for (int i = 0; i < search_page.n_keys; i++ && !found) {
                 if (search_id < search_page.key[i]) {
                     found_page_address = search_page.children[i];
                     found = true;
+                    break;
                 }
             }
         }
@@ -252,16 +289,16 @@ public:
         fstream second_index_file(index_paths[1], ios::in | ios::binary);
         IndexPage<decltype(RecordType::id)> second_index_page;
         second_index_file.seekg((streamoff) found_page_address);
-        second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page));
         size_t found_second_page_address = 0;
         found = false;
         size_t found_id;
-        while (second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page)) && !found) {
+        while (!found && second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page))) {
             for (int i = 0; i < second_index_page.n_keys; i++ && !found) {
                 if (search_id < second_index_page.key[i]) {
                     found_second_page_address = second_index_page.children[i];
                     found_id = second_index_page.key[i];
                     found = true;
+                    break;
                 }
             }
         }
@@ -424,29 +461,21 @@ private:
 
         size_t data_index_page_address = 0;
         // Build second index page from the data index page
-        while (data_index_file.read(data_index_page.deserialize(),
-                                    sizeof(data_index_page))) {
-
+        while (data_index_file.read(data_index_page.deserialize(), sizeof(data_index_page))) {
             if (second_index_page.n_keys == M<decltype(RecordType::id)>) {
-                second_index_page.children[second_index_page.n_keys] =
-                        data_index_page_address;
-                second_index_file.write(second_index_page.c_str(),
-                                        sizeof(second_index_page));
+                second_index_page.children[second_index_page.n_keys] = data_index_page_address;
+                second_index_file.write(second_index_page.c_str(), sizeof(second_index_page));
                 second_index_page.n_keys = 0;
             }
-            second_index_page.children[second_index_page.n_keys] =
-                    data_index_page_address;
-            second_index_page.key[second_index_page.n_keys] =
-                    data_index_page.records[0].id;
+            second_index_page.children[second_index_page.n_keys] = data_index_page_address;
+            second_index_page.key[second_index_page.n_keys] = data_index_page.records[data_index_page.n_records - 1].id;
             second_index_page.n_keys++;
             data_index_page_address = data_index_file.tellg();
         }
 
         if (second_index_page.n_keys > 0) {
-            second_index_page.children[second_index_page.n_keys] =
-                    data_index_page_address;
-            second_index_file.write(second_index_page.c_str(),
-                                    sizeof(second_index_page));
+            second_index_page.children[second_index_page.n_keys] = data_index_page_address;
+            second_index_file.write(second_index_page.c_str(), sizeof(second_index_page));
         }
 
         data_index_file.close();
@@ -457,29 +486,21 @@ private:
         fstream first_index_file(index_paths[0], ios::out | ios::binary);
         IndexPage<decltype(RecordType::id)> first_index_page;
         size_t second_index_page_address = 0;
-        while (
-                second_index_file.read(second_index_page.deserialize(),
-                                       sizeof(second_index_page))) {
+        while (second_index_file.read(second_index_page.deserialize(), sizeof(second_index_page))) {
             if (first_index_page.n_keys == M<decltype(RecordType::id)>) {
-                first_index_page.children[first_index_page.n_keys] =
-                        second_index_page_address;
-                first_index_file.write(first_index_page.c_str(),
-                                       sizeof(first_index_page));
+                first_index_page.children[first_index_page.n_keys] = second_index_page_address;
+                first_index_file.write(first_index_page.c_str(), sizeof(first_index_page));
                 first_index_page.n_keys = 0;
             }
-            first_index_page.children[first_index_page.n_keys] =
-                    second_index_page_address;
-            first_index_page.key[first_index_page.n_keys] =
-                    second_index_page.key[0];
+            first_index_page.children[first_index_page.n_keys] = second_index_page_address;
+            first_index_page.key[first_index_page.n_keys] = second_index_page.key[second_index_page.n_keys - 1];
             first_index_page.n_keys++;
             second_index_page_address = second_index_file.tellg();
         }
 
         if (first_index_page.n_keys > 0) {
-            first_index_page.children[first_index_page.n_keys] =
-                    second_index_page_address;
-            first_index_file.write(first_index_page.c_str(),
-                                   sizeof(first_index_page));
+            first_index_page.children[first_index_page.n_keys] = second_index_page_address;
+            first_index_file.write(first_index_page.c_str(), sizeof(first_index_page));
         }
 
         second_index_file.close();
@@ -494,8 +515,7 @@ private:
         DataPage<RecordType> data_page;
         RecordType record;
 
-        while (
-                data_file.read(reinterpret_cast<char *>(&record), sizeof(record))) {
+        while (data_file.read(reinterpret_cast<char *>(&record), sizeof(record))) {
             if (data_page.n_records == N<RecordType>) {
                 index_file.write(data_page.c_str(), sizeof(data_page));
                 data_page.n_records = 0;
