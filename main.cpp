@@ -1,10 +1,11 @@
 #include "indexes/Sequential_file.h"
 #include "dataset/data.h"
 #include "parser/parsersql.h"
+#include <chrono>
 
 
 //Variables globales constantes
-const int64_t MAX_RECORDS = 1000;
+const int64_t MAX_RECORDS = 100;
 
 void visualizar_generar_bin(bool visualizar = false){
     records_csv_to_bin("movie_dataset.csv");
@@ -35,6 +36,7 @@ void test_sequential_file(){
     //1. Descomentar y generar los registros de .csv a .bin
     visualizar_generar_bin();
 
+    auto start_delete = chrono::high_resolution_clock::now();
     Sequential_File file("data_sf.bin",1);
 
     //2. Descomentar para usar leer los registros de .bin
@@ -49,13 +51,21 @@ void test_sequential_file(){
     }
     movie_bin.close();
     // // +++++++++++++++++++++++++++++++++++++++++++++++++
-
+    auto end_delete = chrono::high_resolution_clock::now();
+    cout << "Add: " << chrono::duration_cast<chrono::milliseconds>(end_delete - start_delete).count() << " ms" << endl;
     //3. Visualización de archivos
     cout<<endl;
     file.print_file("data_sf.bin");
     cout<<endl;
     file.print_file("aux_sf.bin");
     cout<<endl;
+
+    auto start_delete1 = chrono::high_resolution_clock::now();
+    //6. Busqueda de registros
+    file.search("99861").showData_line();
+    cout<<endl;
+    auto end_delete1 = chrono::high_resolution_clock::now();
+    cout << "Search: " << chrono::duration_cast<chrono::milliseconds>(end_delete1 - start_delete1).count() << " ms" << endl;
 
     //ADVERTENCIA: Si se comentó la sección ADD, cambiar a 0 el segundo parámetro del constructor de Sequential_File
     //4. Remove record
@@ -75,9 +85,7 @@ void test_sequential_file(){
         r.showData_line();
     }
     cout<<endl;
-    //6. Busqueda de registros
-    file.search("99861").showData_line();
-    cout<<endl;
+
 }
 
 void testParser(){
