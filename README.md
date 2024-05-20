@@ -37,6 +37,7 @@
       - [`void add(Record record) -
   - [Pruebas de uso y presentación](#Pruebas-de-uso-y-presentación)
 - [Autores](#autores)
+- [Link de Presentación](#link-de-presentación)
 
 # Introducción
 De lo aprendido implementaremos técnicas de organización de archivos involucrando un manejo eficiente de la memoria secundaria.
