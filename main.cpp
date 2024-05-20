@@ -37,27 +37,28 @@ void test_sequential_file(){
     visualizar_generar_bin();
 
     
-    Sequential_File file("data_sf.bin",1);
+    Sequential_File file("data_sf.bin");
 
     //2. Descomentar para usar leer los registros de .bin
     // ++++++++++Manejo de movie_dataset.bin++++++++++++
-    ifstream movie_bin(data_path+"movie_dataset.bin", ios::binary);
-    if(!movie_bin.is_open()) throw runtime_error("Error al abrir el archivo");
-    auto start_add = chrono::high_resolution_clock::now();
-    Record record;
-    for(int i = 0; i<MAX_RECORDS; i++){
-        movie_bin.read(reinterpret_cast<char*>(&record), sizeof(Record));
-        file.add(record);
-    }
-    auto end_add = chrono::high_resolution_clock::now();
-    movie_bin.close();
+    // ifstream movie_bin(data_path+"movie_dataset.bin", ios::binary);
+    // if(!movie_bin.is_open()) throw runtime_error("Error al abrir el archivo");
+    // auto start_add = chrono::high_resolution_clock::now();
+    // Record record;
+    // for(int i = 0; i<MAX_RECORDS; i++){
+    //     // cout<<i+1<<": ";
+    //     movie_bin.read(reinterpret_cast<char*>(&record), sizeof(Record));
+    //     file.add(record);
+    // }
+    // auto end_add = chrono::high_resolution_clock::now();
+    // movie_bin.close();
     
        //3. Visualización de archivos
     // cout<<endl;
-    // file.print_file("data_sf.bin");
-    // cout<<endl;
-    // file.print_file("aux_sf.bin");
-    // cout<<endl;
+    file.print_file("data_sf.bin");
+    cout<<endl;
+    file.print_file("aux_sf.bin");
+    cout<<endl;
 
     // ifstream movie_bin(bin_path+"data_sf.bin", ios::binary);
     // if(!movie_bin.is_open()) throw runtime_error("Error al abrir el archivo");
@@ -72,7 +73,7 @@ void test_sequential_file(){
 
     auto start_search = chrono::high_resolution_clock::now();
     //6. Busqueda de registros
-    file.search("1140066").showData_line();
+    file.search("1197699").showData_line();
     cout<<endl;
     auto end_search = chrono::high_resolution_clock::now();
     // cout << "Add: " << chrono::duration_cast<chrono::milliseconds>(end_add - start_add).count() << " ms" << endl;
