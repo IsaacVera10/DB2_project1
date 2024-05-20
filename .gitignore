@@ -4,7 +4,7 @@ cmake-build-debug/
 cmake-build-release/
 main.exe
 main
-files/*.bin
+/files/*.bin
 /dataset/*.csv
 /dataset/.venv/
 /dataset/*.bin
