@@ -592,6 +592,35 @@ public:
 
         file.close();
     }
+    vector<Record_SFile> inorder(){
+        ifstream file1(bin_path + this->filename, ios::binary | ios::in);
+        if (!file1.is_open()) throw runtime_error("No se pudo abrir el archivo " + filename);
+        ifstream file2(bin_path + "aux_sf.bin", ios::binary | ios::in);
+        if (!file2.is_open()) throw runtime_error("No se pudo abrir el archivo metadata.dat");
+
+        vector<Record_SFile> records;
+        file1.read(reinterpret_cast<char*>(&var_temps_SF::n_data), sizeof(var_temps_SF::n_data));
+        file1.read(reinterpret_cast<char*>(&var_temps_SF::punt_pos), sizeof(var_temps_SF::punt_pos));
+        file1.read(reinterpret_cast<char*>(&var_temps_SF::punt_is_in_data), sizeof(var_temps_SF::punt_is_in_data));
+
+        if(var_temps_SF::n_data==0) throw runtime_error("No hay registros");
+        file2.seekg(sizeof(var_temps_SF::n_aux), ios::beg);
+
+        ifstream* temp_file=nullptr;
+
+        while(var_temps_SF::punt_pos!=-1 && var_temps_SF::punt_is_in_data!=0){
+            temp_file = var_temps_SF::punt_is_in_data ? &file1 : &file2;
+            temp_file->seekg(get_pos_fisica(var_temps_SF::punt_pos, var_temps_SF::punt_is_in_data), ios::beg);
+            temp_file->read(reinterpret_cast<char*>(&var_temps_SF::rec_temp), sizeof(var_temps_SF::rec_temp));
+            records.push_back(var_temps_SF::rec_temp);
+            var_temps_SF::punt_pos = var_temps_SF::rec_temp.punt_nextPosLogic;
+            var_temps_SF::punt_is_in_data = var_temps_SF::rec_temp.punt_next_is_In_Data;
+        }
+        
+        file1.close();
+        file2.close();
+
+    }
 };
 
 #endif //PROYECTO_1_SEQUENTIALFILE_H

@@ -5,10 +5,10 @@
 
 
 //Variables globales constantes
-const int64_t MAX_RECORDS = 10000;
+const int64_t MAX_RECORDS = 100000;
 
 void visualizar_generar_bin(bool visualizar = false){
-    records_csv_to_bin("movie_dataset.csv");
+    // records_csv_to_bin("movie_dataset.csv");
     // ++++++++++Manejo de movie_dataset.bin++++++++++++
     ifstream movie_bin(data_path+"movie_dataset.bin", ios::binary);
     if(!movie_bin.is_open()) throw runtime_error("Error al abrir el archivo");
@@ -34,42 +34,52 @@ void visualizar_generar_bin(bool visualizar = false){
 
 void test_sequential_file(){
     //1. Descomentar y generar los registros de .csv a .bin
-    // visualizar_generar_bin();
+    visualizar_generar_bin();
 
-    auto start_delete = chrono::high_resolution_clock::now();
+    
     Sequential_File file("data_sf.bin",1);
 
     //2. Descomentar para usar leer los registros de .bin
     // ++++++++++Manejo de movie_dataset.bin++++++++++++
     ifstream movie_bin(data_path+"movie_dataset.bin", ios::binary);
     if(!movie_bin.is_open()) throw runtime_error("Error al abrir el archivo");
-
+    auto start_add = chrono::high_resolution_clock::now();
     Record record;
     for(int i = 0; i<MAX_RECORDS; i++){
         movie_bin.read(reinterpret_cast<char*>(&record), sizeof(Record));
         file.add(record);
     }
+    auto end_add = chrono::high_resolution_clock::now();
     movie_bin.close();
-    // // +++++++++++++++++++++++++++++++++++++++++++++++++
-    auto end_delete = chrono::high_resolution_clock::now();
     
-    //3. Visualización de archivos
-    cout<<endl;
-    file.print_file("data_sf.bin");
-    cout<<endl;
-    file.print_file("aux_sf.bin");
-    cout<<endl;
+       //3. Visualización de archivos
+    // cout<<endl;
+    // file.print_file("data_sf.bin");
+    // cout<<endl;
+    // file.print_file("aux_sf.bin");
+    // cout<<endl;
 
-    auto start_delete1 = chrono::high_resolution_clock::now();
+    // ifstream movie_bin(bin_path+"data_sf.bin", ios::binary);
+    // if(!movie_bin.is_open()) throw runtime_error("Error al abrir el archivo");
+    // //leeremos el ulitmo record
+    // movie_bin.seekg(0, ios::end);
+    // movie_bin.seekg(-sizeof(Record_SFile), ios::cur);
+    // Record_SFile record;
+    // movie_bin.read(reinterpret_cast<char*>(&record), sizeof(Record));
+    // record.showData_line();
+    // cout<<endl;
+    // movie_bin.close();
+
+    auto start_search = chrono::high_resolution_clock::now();
     //6. Busqueda de registros
-    file.search("227156").showData_line();
+    file.search("1140066").showData_line();
     cout<<endl;
-    auto end_delete1 = chrono::high_resolution_clock::now();
-    cout << "Add: " << chrono::duration_cast<chrono::milliseconds>(end_delete - start_delete).count() << " ms" << endl;
-    cout << "Search: " << chrono::duration_cast<chrono::milliseconds>(end_delete1 - start_delete1).count() << " ms" << endl;
+    auto end_search = chrono::high_resolution_clock::now();
+    // cout << "Add: " << chrono::duration_cast<chrono::milliseconds>(end_add - start_add).count() << " ms" << endl;
+    cout << "Search: " << chrono::duration_cast<chrono::milliseconds>(end_search - start_search).count() << " ms" << endl;
 
-    //ADVERTENCIA: Si se comentó la sección ADD, cambiar a 0 el segundo parámetro del constructor de Sequential_File
-    //4. Remove record
+    // //ADVERTENCIA: Si se comentó la sección ADD, cambiar a 0 el segundo parámetro del constructor de Sequential_File
+    // //4. Remove record
     // if(file.remove_record("9802")) cout<<"Registro eliminado"<<endl;
     // if(file.remove_record("11")) cout<<"Registro eliminado"<<endl;
     // if(file.remove_record("791373")) cout<<"Registro eliminado"<<endl;
@@ -85,7 +95,7 @@ void test_sequential_file(){
     // for(auto& r: vec){
     //     r.showData_line();
     // }
-    cout<<endl;
+    // cout<<endl;
 
 }
 

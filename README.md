@@ -726,14 +726,21 @@ Primero buscamos el record con la función `search(string key)`, pues nos dirá 
   En ambos casos se hace un recorrido lineal extra, ya que debemos obtener el record anterior al que quiero eliminar.
 
 ### Medición de tiempos
-Hicimos un benchmark del desempeño de inserción y búsqueda en Sequential File con 100, 1000, 10000 y 913035 registros. Estas ejecuciones se hicieron en un sistema operativo GNU/Linux. Los resultados se muestran en la siguiente tabla:
+Hicimos un benchmark del desempeño de inserción y búsqueda en Sequential File con 100, 1000, 10000 y 913035 registros. Los resultados se muestran en la siguiente tabla:
+#### GNU/Linux:
 | **Cantidad de registros** |  **Tiempo de inserción (ms)**   |  **Tiempo de búsqueda (ms)**  |
 |:--------------------------:|:-------------------------------:|:-----------------------------:|
 | 100                        |               8                |              0                |
 | 1000                       |              329               |              0               |
 | 10000                      |             21737              |              0              |
 
- 
+ #### Windows:
+| **Cantidad de registros** |  **Tiempo de inserción (ms)**   |  **Tiempo de búsqueda (ms)**  |
+|:--------------------------:|:-------------------------------:|:-----------------------------:|
+| 100                        |            1330                |              12                |
+| 1000                       |            15024               |              18                |
+| 10000                      |            318394              |              37                |
+
 ## ISAM
  Esta técnica de organización se caracteriza por manejar índices secundarios que apunta a bloques de registros en un archivo de datos. Cada bloque tiene un tamaño fijo y contiene registros ordenados por su *key*. Los índice secundario se organizan en archivos de índices.
 
