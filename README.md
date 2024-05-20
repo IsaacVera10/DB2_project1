@@ -34,7 +34,7 @@
     - [`Class Extendible_Hashing`: Constructor](#class-extendible_hashing-constructor)
     - [`Class Extendible_Hashing`: Funciones privadas](#class-extendible_hashing-funciones-privadas)
     - [`Class Extendible_Hashing`: Funciones públicas](#class-extendible_hashing-funciones-públicas)
-      - [`void add(Record record) -
+
   - [Pruebas de uso y presentación](#Pruebas-de-uso-y-presentación)
 - [Autores](#autores)
 - [Link de Presentación](#link-de-presentación)
