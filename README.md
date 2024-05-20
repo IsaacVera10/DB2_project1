@@ -1142,12 +1142,18 @@ La implementación del parser SQL sigue los pasos de un compilador tradicional: 
 
 ```
 StmtList ::= ( SelectStmt | InsertStmt | CreateStmt
-            | DeleteStmt ) "USING"
+            | DeleteStmt ) "USING" ("ISAM" | "SEQUENTIAL" | "HASH")
 
 SelectStmt ::= "SELECT" colum-list "FROM" 
               table-name [where-clause]
 
-where-clause ::= "WHERE" condition
+InsertStmt ::= "INSERT" "INTO" table-name "VALUES" "(" value1, value2, ...., valuen ")" 
+              table-name [where-clause]
+CreateStmt ::= "CREATE" "TABLE" table-name "FROM" "FILE" filename
+              
+DeleteStmt ::= "DELETE" "FROM" table-name WHERE column-name = value
+
+where-clause ::= "WHERE" condition 
 
 condition ::= expression (comparison-operator expression)
 
@@ -1161,11 +1167,11 @@ comparison-operator ::= "=" | "!=" | ">" | "<"
 
 | **Consulta** | **Sentencia** | 
 |--------------|--------------|
-| `SELECT`  | SELECT * FROM table WHERE column = value | 
-| `SELECT`  | SELECT * FROM table WHERE column BETWEEN value1 AND value2  | 
-| `CREATE` | CREATE INDEX nameIndex ON column USING typeIndex | 
-| `INSERT` |INSERT INTO table VALUES (value1,value2,...,valuen) |
-| `DELETE` | DELETE FROM table WHERE column = value |
+| `SELECT`  | SELECT * FROM tableName WHERE column = value USING nameIndexStructure | 
+| `SELECT`  | SELECT * FROM tableName WHERE column BETWEEN(begin,end) USING nameIndexStructure  | 
+| `CREATE` | CREATE TABLE tableName FROM FILE fileName USING INDEX nameIndexStructure(primaryKey) | 
+| `INSERT` |INSERT INTO tableName VALUES (value1,value2,...,valuen) USING nameIndexStructure|
+| `DELETE` | DELETE FROM tableName WHERE column = value USING nameIndexStructura|
 
 # Pruebas de uso y presentación
 
