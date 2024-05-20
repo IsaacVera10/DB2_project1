@@ -1196,3 +1196,12 @@ mostrarlos en el qt.
 |:----------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------:|:----:|
 |           ![Isaac Vera Romero](https://avatars.githubusercontent.com/u/67709665?v=4)            |      ![David Torres Osorio](https://avatars.githubusercontent.com/u/63759366?v=4)       |              ![Pedro Mori](https://avatars.githubusercontent.com/u/82919499?v=4)              | ![Leonardo Candio](https://avatars.githubusercontent.com/u/75516714?v=4) | ![Esteban Vasquez](https://avatars.githubusercontent.com/u/41312479?v=4) |                                             
 | <a href="https://github.com/IsaacVera10" target="_blank">`github.com/IsaacVera10`</a> | <a href="https://github.com/davidt02tech" target="_blank">`github.com/davidt02tech`</a> | <a href="https://github.com/PedroMO11" target="_blank">`github.com/PedroMO11`</a> | <a href="https://github.com/leonardocandio" target="_blank">`github.com/leonardocandio`</a>|<a href="https://github.com/MuchSquid" target="_blank">`github.com/MuchSquid`</a>|
+
+
+# Link de Presentación
+<!-- <div align="center">
+    <iframe src="https://drive.google.com/drive/folders/1ahsgngEoHToYhlOukNddpjfT5Bhhj0v-?usp=drive_link" width="640" height="480" allow="autoplay"></iframe>
+</div>
+
+O puedes  -->
+[Hacer click](https://drive.google.com/drive/folders/1ahsgngEoHToYhlOukNddpjfT5Bhhj0v-?usp=drive_link).

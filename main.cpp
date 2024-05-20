@@ -55,8 +55,8 @@ void test_sequential_file(){
     
        //3. Visualización de archivos
     // cout<<endl;
-    file.print_file("data_sf.bin");
-    cout<<endl;
+    // file.print_file("data_sf.bin");
+    // cout<<endl;
     file.print_file("aux_sf.bin");
     cout<<endl;
 
@@ -73,7 +73,7 @@ void test_sequential_file(){
 
     auto start_search = chrono::high_resolution_clock::now();
     //6. Busqueda de registros
-    file.search("1197699").showData_line();
+    file.search("193584").showData_line();
     cout<<endl;
     auto end_search = chrono::high_resolution_clock::now();
     // cout << "Add: " << chrono::duration_cast<chrono::milliseconds>(end_add - start_add).count() << " ms" << endl;
