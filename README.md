@@ -840,7 +840,7 @@ Su implementación en este proyecto se hace principalmente en dos archivos: Uno 
    - Se hacer encadenamiento de buckets.
    
 ```cpp
-void writeRecord(Record<T> record) {
+void add(Record<T> record) {
         fstream dataFile(this->fileName, ios::binary | ios::out | ios::in);
 
         if(!dataFile.is_open())
@@ -848,10 +848,11 @@ void writeRecord(Record<T> record) {
 
         //Locate bucket where record will be inserted
         size_t hashValue = std::hash<T>{}(record.getKey());
-        //cout << "hashValue: " << hashValue << endl;
         int index = hashValue % static_cast<int>(pow(2, D));
 
+
         long bucketAddress = this->indexVector[index].bucketAddress;
+
 
         //Read bucket from disk
         Bucket<T> bucket;
@@ -874,51 +875,41 @@ void writeRecord(Record<T> record) {
                 //Split bucket
                 string binaryString = bucket.toBinaryString();
 
+
                 string newBinary1 = "0" + binaryString;
                 string newBinary2 = "1" + binaryString;
 
                 bucket.depth++;
-                bucket.binary = this->makeAddress(newBinary1, bucket.depth);
 
-                Bucket<T> newBucket;
-                newBucket.depth = bucket.depth;
-                newBucket.binary = this->makeAddress(newBinary2, bucket.depth);
+                Bucket<T> newBucket1;
+                newBucket1.depth = bucket.depth;
+                newBucket1.binary = this->makeAddress(newBinary1, bucket.depth);
+                newBucket1.bucketAddress = bucket.bucketAddress;
 
-
-
-                //Redistribute elements in current bucket and newBucket
-                for (int i = 0; i < bucket.size; i++) {
-                    size_t hashKey = std::hash<T>{}(bucket.records[i].getKey());
-                    int indexKey = hashKey % static_cast<int>(pow(2, D));
-                    string binaryKey = bitset<D>(indexKey).to_string();
-                    int bucketNum = this->makeAddress(binaryKey, bucket.depth);
-
-                    if (bucketNum != bucket.binary) {
-                        newBucket.records[newBucket.size] = bucket.records[i];
-                        newBucket.size++;
-                        bucket.deleteRecord(i);
-                    }
-                }
+                Bucket<T> newBucket2;
+                newBucket2.depth = bucket.depth;
+                newBucket2.binary = this->makeAddress(newBinary2, bucket.depth);
 
                 //Save modified bucket to datafile
                 dataFile.seekp(bucketAddress, ios::beg);
-                dataFile.write(reinterpret_cast<char *>(&bucket), sizeof(bucket));
+                dataFile.write(reinterpret_cast<char *>(&newBucket1), sizeof(newBucket1));
 
                 //Insert new bucket to datafile
                 dataFile.seekp(0, ios::end); //Go to the end of file
                 long newBucketAddress = dataFile.tellp();
-                newBucket.bucketAddress = newBucketAddress;
-                dataFile.write(reinterpret_cast<char *>(&newBucket), sizeof(newBucket));
+                newBucket2.bucketAddress = newBucketAddress;
+                dataFile.write(reinterpret_cast<char *>(&newBucket2), sizeof(newBucket2));
                 dataFile.close();
+
 
                 //Update index on RAM
                 for (int i = 0; i < this->indexVector.size(); i++) {
-                    if (this->indexVector[i].bucketAddress == bucket.bucketAddress) {
+                    if (this->indexVector[i].bucketAddress == newBucket1.bucketAddress) {
                         string binaryKey = bitset<D>(this->indexVector[i].binary).to_string();
-                        int bucketNum2 = this->makeAddress(binaryKey, bucket.depth);
+                        int bucketNum2 = this->makeAddress(binaryKey, newBucket1.depth);
                         //cout << "bucketNum2: " << bucketNum2 << endl;
 
-                        if (bucketNum2 != bucket.binary) {
+                        if (bucketNum2 != newBucket1.binary) {
                             this->indexVector[i].bucketAddress = newBucketAddress;
                         }
                     }
@@ -934,7 +925,12 @@ void writeRecord(Record<T> record) {
 
                 indexFile.close();
 
+                for (int i = 0; i < bucket.size; i++) {
+                    this->writeRecord(bucket.records[i]);
+                }
+
                 this->writeRecord(record); //Call recursively to insert new record that caused a split
+
             }
 
             else {
@@ -949,6 +945,7 @@ void writeRecord(Record<T> record) {
                 newBucket.records[0] = record;
                 newBucket.size = 1;
                 newBucket.next_bucket = overflowAddress;
+                newBucket.bucketAddress = bucket.bucketAddress;
                 dataFile.seekp(bucketAddress, ios::beg);
                 dataFile.write(reinterpret_cast<char*>(&newBucket), sizeof(newBucket));
 
@@ -977,7 +974,7 @@ También se hace uso de una función auxiliar makeAddress(), la cual recibe un n
     }
 
 ```
-La complejidad de este método en el peor caso es O(FB + 2^D).
+La complejidad de este método en el peor caso es O(FB + 2^D). El costo que pagamos es al llamar recursivamente la función para reinsertar los registros en los buckets incluyendo el nuevo registro. La mejora que se podría hacer a futuro sería redistribuir in-place los registros entre los dos buckets.
 
 2. Buscar registro: Busca el directorio correspondiente a la key del registro luego de aplicar la función hash, con la dirección de allí se busca en el archivo de datos para traer a memoria RAM el bucket. Busca dentro del bucket inicial o entre lo buckets encadenados y retorna el registro. Caso contrario lanza una excepción de que no encontró el registro. La complejidad de este método en el peor caso es O(FB).
 
@@ -1134,10 +1131,9 @@ Hicimos un benchmark del desempeño de inserción y búsqueda en Extendible Hash
 
 | **Cantidad de registros** |  **Tiempo de inserción (ms)**   |  **Tiempo de búsqueda (ms)**  |
 |:--------------------------:|:-------------------------------:|:-----------------------------:|
-| 100                        |                666                |               0.0430               |
-| 1000                       |               6521                |              0.02791              |
-| 10000                      |               63068               |              0.02891              |
-
+| 100                        |                1790                |               816               |
+| 1000                       |               3436                |              5310              |
+| 10000                      |               481364               |              20281              |
 
 # SQL Parser
 
